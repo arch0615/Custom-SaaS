@@ -16,6 +16,7 @@ import { ProcessEditTab } from "./edit-tab";
 import { StageSelector } from "./stage-selector";
 import { DeleteProcessButton } from "./delete-button";
 import { TimelineView } from "@/components/processes/timeline-view";
+import { AddTimelineEntry } from "./add-timeline-entry";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -45,6 +46,8 @@ export default async function ProcessDetailPage({ params }: { params: Promise<{ 
   ]);
 
   const delayed = isDelayed(proc.stage, proc.arrivalDate);
+  const canWriteTimeline = session.role !== "client";
+  const canDeleteEvents = session.role === "broker_admin";
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-6 p-6">
@@ -143,8 +146,13 @@ export default async function ProcessDetailPage({ params }: { params: Promise<{ 
           </div>
         </TabsContent>
 
-        <TabsContent value="timeline" className="mt-6">
-          <TimelineView events={events} />
+        <TabsContent value="timeline" className="mt-6 space-y-4">
+          {canWriteTimeline && (
+            <div className="flex justify-end">
+              <AddTimelineEntry processId={proc.id} />
+            </div>
+          )}
+          <TimelineView events={events} canDelete={canDeleteEvents} />
         </TabsContent>
 
         <TabsContent value="documents" className="mt-6">
@@ -171,6 +179,8 @@ export default async function ProcessDetailPage({ params }: { params: Promise<{ 
           />
         </TabsContent>
       </Tabs>
+
+      {canWriteTimeline && <AddTimelineEntry processId={proc.id} variant="fab" />}
     </div>
   );
 }
