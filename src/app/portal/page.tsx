@@ -1,32 +1,27 @@
-import { auth, signOut } from "@/auth";
-import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export const metadata = { title: "Portal" };
 
-export default async function PortalHomePage() {
-  const session = await auth();
-
+export default function PortalHomePage() {
   return (
-    <main className="mx-auto w-full max-w-2xl space-y-6 px-6 py-12">
+    <div className="mx-auto w-full max-w-2xl space-y-6 p-6">
       <header className="space-y-1">
-        <h1 className="text-2xl font-semibold tracking-tight">Portal do cliente</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Seus processos</h1>
         <p className="text-sm text-muted-foreground">
-          Logado como {session?.user?.name ?? session?.user?.email}
+          Acompanhe o andamento de cada importação ou exportação.
         </p>
       </header>
-      <p className="text-muted-foreground">
-        Em breve: status dos seus processos, linha do tempo e documentos.
-      </p>
-      <form
-        action={async () => {
-          "use server";
-          await signOut({ redirectTo: "/login" });
-        }}
-      >
-        <Button variant="outline" type="submit">
-          Sair
-        </Button>
-      </form>
-    </main>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Sem processos ainda</CardTitle>
+          <CardDescription>
+            Assim que o despachante cadastrar um processo em seu nome, ele aparecerá aqui.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="text-sm text-muted-foreground">
+          Em cada processo você verá a etapa atual, a linha do tempo e os documentos disponíveis.
+        </CardContent>
+      </Card>
+    </div>
   );
 }

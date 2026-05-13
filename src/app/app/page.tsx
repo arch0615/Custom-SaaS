@@ -1,34 +1,50 @@
-import { auth, signOut } from "@/auth";
-import { Button } from "@/components/ui/button";
+import { requireSession } from "@/lib/auth/session";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export const metadata = { title: "Dashboard" };
 
 export default async function AppHomePage() {
-  const session = await auth();
+  const session = await requireSession();
+
+  const cards = [
+    { label: "Processos em aberto", value: "—" },
+    { label: "Atrasados", value: "—" },
+    { label: "Concluídos no mês", value: "—" },
+    { label: "Documentos para revisar", value: "—" },
+  ];
 
   return (
-    <main className="mx-auto w-full max-w-4xl space-y-6 px-6 py-12">
+    <div className="mx-auto w-full max-w-6xl space-y-6 p-6">
       <header className="space-y-1">
-        <h1 className="text-2xl font-semibold tracking-tight">Bem-vindo</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
         <p className="text-sm text-muted-foreground">
-          Logado como {session?.user?.name ?? session?.user?.email} ·{" "}
-          {session?.user?.activeRole ?? "sem papel"} ·{" "}
-          org {session?.user?.activeOrgId?.slice(0, 8) ?? "—"}
+          Bem-vindo, {session.userName ?? session.userEmail}.
         </p>
       </header>
-      <p className="text-muted-foreground">
-        Dashboard em construção. Próximos módulos: clientes, processos, timeline, documentos.
-      </p>
-      <form
-        action={async () => {
-          "use server";
-          await signOut({ redirectTo: "/login" });
-        }}
-      >
-        <Button variant="outline" type="submit">
-          Sair
-        </Button>
-      </form>
-    </main>
+
+      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {cards.map((c) => (
+          <Card key={c.label}>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                {c.label}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-semibold">{c.value}</div>
+            </CardContent>
+          </Card>
+        ))}
+      </section>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Próximas chegadas</CardTitle>
+        </CardHeader>
+        <CardContent className="text-sm text-muted-foreground">
+          Sem processos cadastrados ainda. Crie o primeiro em <strong>Processos</strong>.
+        </CardContent>
+      </Card>
+    </div>
   );
 }
