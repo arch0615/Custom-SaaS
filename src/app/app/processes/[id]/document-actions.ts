@@ -8,6 +8,7 @@ import { requireSession } from "@/lib/auth/session";
 import { getProcessForOrg } from "@/lib/data/processes";
 import {
   createDocumentForOrg,
+  DOCUMENT_TYPE_LABEL,
   getDocumentForOrg,
   markDocumentReplaced,
   softDeleteDocumentForOrg,
@@ -23,6 +24,10 @@ import {
   isAcceptableMime,
   storage,
 } from "@/lib/storage";
+import {
+  dispatchNotification,
+  resolveCustomerClientUsers,
+} from "@/lib/notifications/dispatch";
 
 export type DocumentFormState = {
   success?: boolean;
@@ -89,6 +94,21 @@ export async function uploadDocumentAction(
     source: "system",
     actorId: session.userId,
   });
+
+  const recipients = await resolveCustomerClientUsers(session.orgId, proc.customerId);
+  if (recipients.length > 0) {
+    await dispatchNotification({
+      orgId: session.orgId,
+      kind: "doc_added_by_broker",
+      payload: {
+        processId,
+        processReference: proc.reference,
+        filename,
+        docType: DOCUMENT_TYPE_LABEL[typeParse.data as DocumentType],
+      },
+      recipients,
+    });
+  }
 
   revalidatePath(`/app/processes/${processId}`);
   return { success: true };

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Ship } from "lucide-react";
 import { UserMenu } from "@/components/app/user-menu";
+import { NotificationBell, type BellItem } from "@/components/notifications/notification-bell";
 
 export function PortalShell({
   orgName,
@@ -8,6 +9,8 @@ export function PortalShell({
   userEmail,
   signOutAction,
   impersonating,
+  bellItems,
+  unreadCount,
   children,
 }: {
   orgName: string;
@@ -15,6 +18,8 @@ export function PortalShell({
   userEmail?: string | null;
   signOutAction: () => Promise<void>;
   impersonating: boolean;
+  bellItems: BellItem[];
+  unreadCount: number;
   children: React.ReactNode;
 }) {
   return (
@@ -29,7 +34,10 @@ export function PortalShell({
           <Ship className="size-5 text-primary" />
           <span className="truncate text-sm font-semibold">{orgName}</span>
         </Link>
-        <UserMenu name={userName} email={userEmail} signOutAction={signOutAction} />
+        <div className="flex items-center gap-1">
+          <NotificationBell unreadCount={unreadCount} items={bellItems} />
+          <UserMenu name={userName} email={userEmail} signOutAction={signOutAction} />
+        </div>
       </header>
       <main className="flex-1 overflow-y-auto">{children}</main>
     </div>

@@ -3,6 +3,7 @@ import { SidebarNav } from "./sidebar-nav";
 import { MobileNav } from "./mobile-nav";
 import { UserMenu } from "./user-menu";
 import type { NavItem } from "./nav-items";
+import { NotificationBell, type BellItem } from "@/components/notifications/notification-bell";
 
 export function AppShell({
   navItems,
@@ -10,6 +11,8 @@ export function AppShell({
   userName,
   userEmail,
   signOutAction,
+  bellItems,
+  unreadCount,
   children,
 }: {
   navItems: NavItem[];
@@ -17,6 +20,8 @@ export function AppShell({
   userName?: string | null;
   userEmail?: string | null;
   signOutAction: () => Promise<void>;
+  bellItems: BellItem[];
+  unreadCount: number;
   children: React.ReactNode;
 }) {
   return (
@@ -39,7 +44,10 @@ export function AppShell({
               <span className="truncate text-sm font-semibold">{orgName}</span>
             </div>
           </div>
-          <UserMenu name={userName} email={userEmail} signOutAction={signOutAction} />
+          <div className="flex items-center gap-1">
+            <NotificationBell unreadCount={unreadCount} items={bellItems} />
+            <UserMenu name={userName} email={userEmail} signOutAction={signOutAction} />
+          </div>
         </header>
         <main className="flex-1 overflow-y-auto">{children}</main>
       </div>

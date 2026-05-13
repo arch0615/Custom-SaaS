@@ -16,6 +16,10 @@ import {
 import { getCustomerForOrg } from "@/lib/data/customers";
 import { createTimelineEvent } from "@/lib/data/timeline";
 import { STAGE_LABEL, isStageJump } from "@/lib/process-status";
+import {
+  dispatchNotification,
+  resolveCustomerClientUsers,
+} from "@/lib/notifications/dispatch";
 
 export type ProcessFormState = {
   error?: string;
@@ -94,6 +98,21 @@ export async function advanceStageAction(id: string, formData: FormData) {
     nonSequential: jump,
     actorId: session.userId,
   });
+
+  const recipients = await resolveCustomerClientUsers(session.orgId, existing.customerId);
+  if (recipients.length > 0) {
+    await dispatchNotification({
+      orgId: session.orgId,
+      kind: "stage_advanced",
+      payload: {
+        processId: id,
+        processReference: existing.reference,
+        stageLabel: STAGE_LABEL[toStage],
+        toStage,
+      },
+      recipients,
+    });
+  }
 
   revalidatePath("/app/processes");
   revalidatePath(`/app/processes/${id}`);
