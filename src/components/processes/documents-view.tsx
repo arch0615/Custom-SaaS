@@ -66,7 +66,7 @@ export function DocumentsView({
                       <MimeIcon mime={doc.mimeType} />
                       <div className="min-w-0 flex-1">
                         <a
-                          href={`/app/processes/${processId}/documents/${doc.id}/download`}
+                          href={`/api/documents/${doc.id}/download`}
                           className="block truncate text-sm font-medium hover:underline"
                           title={doc.filename}
                         >
@@ -86,7 +86,7 @@ export function DocumentsView({
                         processId={processId}
                         documentId={doc.id}
                         filename={doc.filename}
-                        downloadUrl={`/app/processes/${processId}/documents/${doc.id}/download`}
+                        downloadUrl={`/api/documents/${doc.id}/download`}
                       />
                     )}
                   </li>

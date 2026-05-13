@@ -1,6 +1,6 @@
 import { and, desc, eq, isNull, sql } from "drizzle-orm";
 import { db } from "@/db/client";
-import { customers, type customerType } from "@/db/schema/customers";
+import { customers, customerContacts, type customerType } from "@/db/schema/customers";
 
 type CustomerType = (typeof customerType.enumValues)[number];
 
@@ -98,6 +98,27 @@ export async function softDeleteCustomerForOrg(orgId: string, id: string) {
     .where(and(eq(customers.orgId, orgId), eq(customers.id, id), isNull(customers.deletedAt)))
     .returning({ id: customers.id });
   return result[0] ?? null;
+}
+
+export async function getCustomerForClientUser(orgId: string, userId: string) {
+  const [row] = await db
+    .select({
+      customerId: customers.id,
+      legalName: customers.legalName,
+      tradeName: customers.tradeName,
+      contactId: customerContacts.id,
+    })
+    .from(customerContacts)
+    .innerJoin(customers, eq(customers.id, customerContacts.customerId))
+    .where(
+      and(
+        eq(customers.orgId, orgId),
+        eq(customerContacts.userId, userId),
+        isNull(customers.deletedAt),
+      ),
+    )
+    .limit(1);
+  return row ?? null;
 }
 
 export async function restoreCustomerForOrg(orgId: string, id: string) {
