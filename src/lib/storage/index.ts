@@ -1,4 +1,5 @@
 import { LocalDriver } from "./local";
+import { S3Driver } from "./s3";
 
 export interface StorageDriver {
   put(key: string, data: Buffer | Uint8Array, contentType: string): Promise<void>;
@@ -8,10 +9,32 @@ export interface StorageDriver {
 
 let driver: StorageDriver | null = null;
 
+function buildDriver(): StorageDriver {
+  const choice = (process.env.STORAGE_DRIVER ?? "").toLowerCase();
+
+  if (choice === "s3") {
+    const bucket = process.env.S3_BUCKET;
+    const accessKey = process.env.S3_ACCESS_KEY;
+    const secretKey = process.env.S3_SECRET_KEY;
+    const region = process.env.S3_REGION ?? "auto";
+    const endpoint = process.env.S3_ENDPOINT || undefined;
+    const forcePathStyle = process.env.S3_FORCE_PATH_STYLE === "true";
+
+    if (!bucket || !accessKey || !secretKey) {
+      throw new Error(
+        "STORAGE_DRIVER=s3 requires S3_BUCKET, S3_ACCESS_KEY and S3_SECRET_KEY",
+      );
+    }
+    return new S3Driver({ bucket, accessKey, secretKey, region, endpoint, forcePathStyle });
+  }
+
+  // Default: local filesystem driver (dev / single-server deployments)
+  return new LocalDriver(process.env.STORAGE_LOCAL_DIR ?? ".storage");
+}
+
 export function storage(): StorageDriver {
   if (driver) return driver;
-  // Future: switch on STORAGE_DRIVER env var to S3 driver.
-  driver = new LocalDriver(process.env.STORAGE_LOCAL_DIR ?? ".storage");
+  driver = buildDriver();
   return driver;
 }
 
