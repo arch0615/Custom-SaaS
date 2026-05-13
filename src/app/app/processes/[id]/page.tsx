@@ -6,10 +6,11 @@ import { requireSession } from "@/lib/auth/session";
 import { getProcessForOrg } from "@/lib/data/processes";
 import { listCustomersForOrg, getCustomerForOrg } from "@/lib/data/customers";
 import { listTimelineForProcess } from "@/lib/data/timeline";
+import { listDocumentsForProcess } from "@/lib/data/documents";
 import { MODAL_LABEL, isDelayed, stageBadgeVariant, STAGE_LABEL } from "@/lib/process-status";
 
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { ProcessEditTab } from "./edit-tab";
@@ -17,6 +18,8 @@ import { StageSelector } from "./stage-selector";
 import { DeleteProcessButton } from "./delete-button";
 import { TimelineView } from "@/components/processes/timeline-view";
 import { AddTimelineEntry } from "./add-timeline-entry";
+import { DocumentsView } from "@/components/processes/documents-view";
+import { UploadDocument } from "./upload-document";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -39,10 +42,11 @@ export default async function ProcessDetailPage({ params }: { params: Promise<{ 
   const proc = await getProcessForOrg(session.orgId, id);
   if (!proc) notFound();
 
-  const [customer, customers, events] = await Promise.all([
+  const [customer, customers, events, documents] = await Promise.all([
     getCustomerForOrg(session.orgId, proc.customerId),
     listCustomersForOrg(session.orgId),
     listTimelineForProcess(session.orgId, proc.id),
+    listDocumentsForProcess(session.orgId, proc.id),
   ]);
 
   const delayed = isDelayed(proc.stage, proc.arrivalDate);
@@ -96,7 +100,12 @@ export default async function ProcessDetailPage({ params }: { params: Promise<{ 
             Timeline
             {events.length > 0 && <span className="ml-1 text-xs text-muted-foreground">{events.length}</span>}
           </TabsTrigger>
-          <TabsTrigger value="documents">Documentos</TabsTrigger>
+          <TabsTrigger value="documents">
+            Documentos
+            {documents.length > 0 && (
+              <span className="ml-1 text-xs text-muted-foreground">{documents.length}</span>
+            )}
+          </TabsTrigger>
           <TabsTrigger value="edit">Editar</TabsTrigger>
         </TabsList>
 
@@ -155,17 +164,13 @@ export default async function ProcessDetailPage({ params }: { params: Promise<{ 
           <TimelineView events={events} canDelete={canDeleteEvents} />
         </TabsContent>
 
-        <TabsContent value="documents" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Em construção</CardTitle>
-              <CardDescription>
-                Upload, organização por tipo (Invoice, Packing List, BL, DI, Comprovantes) e
-                visualização inline de PDFs. Entra no próximo módulo.
-              </CardDescription>
-            </CardHeader>
-            <CardContent />
-          </Card>
+        <TabsContent value="documents" className="mt-6 space-y-4">
+          {canWriteTimeline && (
+            <div className="flex justify-end">
+              <UploadDocument processId={proc.id} />
+            </div>
+          )}
+          <DocumentsView processId={proc.id} rows={documents} canWrite={canWriteTimeline} />
         </TabsContent>
 
         <TabsContent value="edit" className="mt-6">
