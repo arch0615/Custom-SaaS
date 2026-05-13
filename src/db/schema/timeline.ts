@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import {
   pgTable,
   text,
@@ -7,6 +8,7 @@ import {
   boolean,
   jsonb,
   index,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { organizations } from "./organizations";
 import { processes, processStage } from "./processes";
@@ -51,5 +53,8 @@ export const timelineEvents = pgTable(
   (e) => [
     index("timeline_process_occurred_idx").on(e.processId, e.occurredAt),
     index("timeline_org_idx").on(e.orgId),
+    uniqueIndex("timeline_provider_ref_unique")
+      .on(e.providerRef)
+      .where(sql`${e.providerRef} IS NOT NULL`),
   ],
 );

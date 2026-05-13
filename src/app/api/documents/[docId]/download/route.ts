@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { auth } from "@/auth";
 import { getDocumentForOrg } from "@/lib/data/documents";
 import { storage } from "@/lib/storage";
+import { rateLimit } from "@/lib/rate-limit";
 
 export async function GET(
   request: NextRequest,
@@ -10,6 +11,14 @@ export async function GET(
   const session = await auth();
   if (!session?.user?.activeOrgId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const allowed = rateLimit({
+    bucket: `download:${session.user.id}`,
+    max: 30,
+    windowMs: 60_000,
+  });
+  if (!allowed) {
+    return NextResponse.json({ error: "rate_limited" }, { status: 429 });
   }
   const { docId } = await params;
 

@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "timeline_provider_ref_unique" ON "timeline_events" USING btree ("provider_ref") WHERE "timeline_events"."provider_ref" IS NOT NULL;

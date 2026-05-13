@@ -28,6 +28,7 @@ import {
   dispatchNotification,
   resolveCustomerClientUsers,
 } from "@/lib/notifications/dispatch";
+import { rateLimit } from "@/lib/rate-limit";
 
 export type DocumentFormState = {
   success?: boolean;
@@ -57,6 +58,10 @@ export async function uploadDocumentAction(
 ): Promise<DocumentFormState> {
   const session = await requireSession();
   if (session.role === "client") return { error: "Sem permissão." };
+
+  if (!rateLimit({ bucket: `upload:${session.userId}`, max: 10, windowMs: 60_000 })) {
+    return { error: "Muitos uploads em pouco tempo. Tente novamente em instantes." };
+  }
 
   const proc = await getProcessForOrg(session.orgId, processId);
   if (!proc) return { error: "Processo não encontrado." };

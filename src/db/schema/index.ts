@@ -6,3 +6,4 @@ export * from "./timeline";
 export * from "./documents";
 export * from "./notifications";
 export * from "./audit";
+export * from "./tracking";

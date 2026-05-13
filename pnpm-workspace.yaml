@@ -4,6 +4,12 @@ allowBuilds:
   esbuild: set this to true or false
   sharp: set this to true or false
   unrs-resolver: set this to true or false
-ignoredBuiltDependencies:
+onlyBuiltDependencies:
+  - '@parcel/watcher'
+  - '@swc/core'
+  - esbuild
   - sharp
   - unrs-resolver
+overrides:
+  esbuild: '>=0.24.3'
+  postcss: '>=8.5.10'
