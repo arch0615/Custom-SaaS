@@ -5,6 +5,7 @@ import { ChevronLeft } from "lucide-react";
 import { requireSession } from "@/lib/auth/session";
 import { getCustomerForOrg } from "@/lib/data/customers";
 import { listProcessesForOrg } from "@/lib/data/processes";
+import { listContactsForCustomer } from "@/lib/data/contacts";
 import { formatCNPJ } from "@/lib/cnpj";
 import { CUSTOMER_TYPE_LABEL } from "@/lib/labels";
 
@@ -14,6 +15,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { CustomerEditTab } from "./edit-tab";
 import { DeleteCustomerButton } from "./delete-button";
 import { CustomerProcessesList } from "@/components/processes/customer-processes-list";
+import { ContactsTab } from "@/components/customers/contacts-tab";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -28,7 +30,10 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
   const customer = await getCustomerForOrg(session.orgId, id);
   if (!customer) notFound();
 
-  const customerProcesses = await listProcessesForOrg(session.orgId, { customerId: id });
+  const [customerProcesses, contacts] = await Promise.all([
+    listProcessesForOrg(session.orgId, { customerId: id }),
+    listContactsForCustomer(session.orgId, id),
+  ]);
 
   return (
     <div className="mx-auto w-full max-w-5xl space-y-6 p-6">
@@ -70,17 +75,18 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
         </TabsContent>
 
         <TabsContent value="contacts" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Em construção</CardTitle>
-              <CardDescription>
-                Cadastro de contatos adicionais com opção de conceder acesso ao portal.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="text-sm text-muted-foreground">
-              Próximo módulo.
-            </CardContent>
-          </Card>
+          <ContactsTab
+            customerId={customer.id}
+            contacts={contacts.map((c) => ({
+              id: c.id,
+              name: c.name,
+              email: c.email,
+              phone: c.phone,
+              canLogin: c.canLogin,
+              userActivated: c.userActivated,
+              isPrimary: c.isPrimary,
+            }))}
+          />
         </TabsContent>
 
         <TabsContent value="processes" className="mt-6">
