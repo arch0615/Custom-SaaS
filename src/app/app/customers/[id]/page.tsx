@@ -4,6 +4,7 @@ import { ChevronLeft } from "lucide-react";
 
 import { requireSession } from "@/lib/auth/session";
 import { getCustomerForOrg } from "@/lib/data/customers";
+import { listProcessesForOrg } from "@/lib/data/processes";
 import { formatCNPJ } from "@/lib/cnpj";
 import { CUSTOMER_TYPE_LABEL } from "@/lib/labels";
 
@@ -12,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { CustomerEditTab } from "./edit-tab";
 import { DeleteCustomerButton } from "./delete-button";
+import { CustomerProcessesList } from "@/components/processes/customer-processes-list";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -25,6 +27,8 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
   const session = await requireSession();
   const customer = await getCustomerForOrg(session.orgId, id);
   if (!customer) notFound();
+
+  const customerProcesses = await listProcessesForOrg(session.orgId, { customerId: id });
 
   return (
     <div className="mx-auto w-full max-w-5xl space-y-6 p-6">
@@ -80,15 +84,7 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
         </TabsContent>
 
         <TabsContent value="processes" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Em construção</CardTitle>
-              <CardDescription>Listagem dos processos vinculados a este cliente.</CardDescription>
-            </CardHeader>
-            <CardContent className="text-sm text-muted-foreground">
-              Disponível após o módulo de Processos entrar.
-            </CardContent>
-          </Card>
+          <CustomerProcessesList rows={customerProcesses} />
         </TabsContent>
 
         <TabsContent value="documents" className="mt-6">
