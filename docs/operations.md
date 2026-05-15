@@ -20,35 +20,67 @@ Required env vars (see `.env.example`):
 | `TRACKING_WEBHOOK_SECRET` | HMAC for `/api/webhooks/tracking` | `openssl rand -hex 32` |
 | `NEXT_PUBLIC_APP_URL` | Public origin | Used in invite e-mails |
 
-## Backups (Postgres)
+## Backups
 
-Pick **one** depending on host:
+### Postgres (VPS — running pg locally)
 
-- **Neon** — automatic point-in-time recovery up to 7 days on the free tier.
-  Nothing to configure. Verify in the Neon dashboard.
-- **Railway / Fly / DigitalOcean Managed PG** — enable scheduled daily
-  snapshots in the provider UI. Keep ≥ 7 days.
-- **Self-hosted (VPS)** — `cron` running `pg_dump | gzip` to S3 once a day,
-  retain 30 days. Example:
+```cron
+# As user customs (sudo crontab -u customs -e):
+30 3 * * * pg_dump -Fc "$DATABASE_URL" > /home/customs/backups/$(date +\%F).dump 2>> /home/customs/backups/cron.log
+0  4 * * * find /home/customs/backups -name "*.dump" -mtime +30 -delete
+```
 
-  ```cron
-  30 3 * * * pg_dump "$DATABASE_URL" | gzip | aws s3 cp - s3://my-backups/customs/$(date +\%F).sql.gz
-  ```
+Off-machine copy (cheap insurance — rclone to any S3-compatible bucket):
 
-Restore drill: at least once before the first paying customer, restore a
-backup to a scratch DB, point a staging build at it, and confirm login
-works. **A backup you never restored is not a backup.**
+```cron
+15 4 * * * rclone copy /home/customs/backups r2:customs-backups
+```
 
-## File storage
+If you prefer managed Postgres (Neon / Railway / RDS / DO), enable their
+built-in daily snapshots and keep ≥ 7 days.
 
-The MVP ships with a filesystem driver (`STORAGE_LOCAL_DIR`). For production:
+### File storage
 
-1. Provision an S3-compatible bucket (Cloudflare R2 recommended — $0 egress).
-2. Implement the S3 driver in `src/lib/storage/s3.ts` (interface is
-   `StorageDriver` from `src/lib/storage/index.ts`).
-3. Switch on `STORAGE_DRIVER=s3` (TODO: add env var read).
-4. Object keys already use `org/<orgId>/process/<processId>/<docId>-<filename>`
-   so migration of existing dev files is straightforward.
+The default driver writes uploaded documents to `STORAGE_LOCAL_DIR`
+(`/home/customs/storage` in the VPS layout). Sync it the same way:
+
+```cron
+0 5 * * * rclone sync /home/customs/storage r2:customs-storage
+```
+
+### Restore drill
+
+Before the first paying customer, restore a backup to a scratch DB, point
+a staging build at it, and confirm login + an upload + a download work.
+**A backup you never restored is not a backup.**
+
+```bash
+# Scratch DB
+sudo -u postgres createdb customs_restore_test
+pg_restore -d "postgresql://customs:<pw>@localhost/customs_restore_test" \
+  /home/customs/backups/2026-05-13.dump
+
+# Try a query
+PGPASSWORD=<pw> psql -h localhost -U customs -d customs_restore_test \
+  -c "SELECT count(*) FROM processes;"
+
+sudo -u postgres dropdb customs_restore_test
+```
+
+## File storage drivers
+
+Two drivers ship behind a single `StorageDriver` interface
+(`src/lib/storage/index.ts`):
+
+| `STORAGE_DRIVER` | Best for | Notes |
+|------------------|----------|-------|
+| `local` (default) | Single VPS, Fly volume, Railway disk | Uses `STORAGE_LOCAL_DIR`. Survives systemd restarts; **not** Vercel (ephemeral FS). |
+| `s3` | Multiple app instances, Vercel, large scale | Cloudflare R2 / AWS S3 / MinIO. Requires `S3_BUCKET`, `S3_ACCESS_KEY`, `S3_SECRET_KEY` and `S3_ENDPOINT`+`S3_REGION` for R2/MinIO. |
+
+Switching driver doesn't touch the DB — only changes where bytes live. To
+migrate existing files when switching, copy `STORAGE_LOCAL_DIR` to the
+bucket preserving the `org/.../process/.../{docId}-{filename}` keys
+(`rclone copy /home/customs/storage r2:customs-documents`).
 
 ## Rate limiting
 

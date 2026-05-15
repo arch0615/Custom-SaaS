@@ -1,0 +1,44 @@
+# Customs SaaS reverse proxy
+# Replace app.example.com with your real domain.
+# Caddy auto-provisions Let's Encrypt certificates.
+
+app.example.com {
+    encode zstd gzip
+
+    # Increase request body limit for document uploads (matches MAX_UPLOAD_BYTES = 25MB).
+    request_body {
+        max_size 26MB
+    }
+
+    # Sensible security headers. Adjust CSP if you embed external assets.
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        Permissions-Policy "interest-cohort=()"
+        -Server
+    }
+
+    # Proxy everything to the Node app on localhost
+    reverse_proxy 127.0.0.1:3000 {
+        # Pass real client info for rate limiter + cookies
+        header_up X-Forwarded-For   {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+        header_up Host              {host}
+    }
+
+    # Long-lived static asset cache
+    @static {
+        path /_next/static/* /favicon.ico
+    }
+    header @static Cache-Control "public, max-age=31536000, immutable"
+
+    log {
+        output file /var/log/caddy/customs-saas.log {
+            roll_size 50MiB
+            roll_keep 10
+        }
+        format json
+    }
+}

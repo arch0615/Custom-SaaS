@@ -1,0 +1,32 @@
+[Unit]
+Description=Customs SaaS (Next.js)
+Documentation=https://github.com/arch0615/Custom-SaaS
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=customs
+Group=customs
+WorkingDirectory=/home/customs/app
+EnvironmentFile=/home/customs/app/.env
+Environment=NODE_ENV=production
+Environment=PORT=3000
+Environment=HOST=127.0.0.1
+ExecStart=/usr/bin/pnpm start
+Restart=on-failure
+RestartSec=5
+
+# Hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/home/customs/app/.next /home/customs/storage /home/customs/app/.next/cache
+PrivateTmp=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target
