@@ -41,3 +41,15 @@ export function timelineTitleForReplace(type: DocumentType, filename: string): s
 export function timelineTitleForDelete(type: DocumentType, filename: string): string {
   return `Documento ${DOCUMENT_TYPE_LABEL[type]} removido: ${filename}`;
 }
+
+export function timelineTitleForClientUpload(type: DocumentType, filename: string): string {
+  return `Cliente enviou ${DOCUMENT_TYPE_LABEL[type]}: ${filename} (aguardando revisão)`;
+}
+
+export function timelineTitleForApproval(type: DocumentType, filename: string): string {
+  return `Documento ${DOCUMENT_TYPE_LABEL[type]} aprovado: ${filename}`;
+}
+
+export function timelineTitleForRejection(type: DocumentType, filename: string): string {
+  return `Documento ${DOCUMENT_TYPE_LABEL[type]} rejeitado: ${filename}`;
+}

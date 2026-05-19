@@ -12,7 +12,7 @@ export default async function HomePage() {
   return (
     <main className="mx-auto flex min-h-svh w-full max-w-3xl flex-col items-start justify-center gap-6 px-6">
       <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-        Customs SaaS
+        Aduanasync
       </h1>
       <p className="text-muted-foreground">
         Gestão de processos de importação e exportação para despachantes — clara, simples, focada em comunicação com o cliente.

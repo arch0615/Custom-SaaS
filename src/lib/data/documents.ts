@@ -19,6 +19,9 @@ export {
   timelineTitleForUpload,
   timelineTitleForReplace,
   timelineTitleForDelete,
+  timelineTitleForClientUpload,
+  timelineTitleForApproval,
+  timelineTitleForRejection,
 } from "./documents-types";
 
 export type DocumentRow = {
@@ -99,6 +102,21 @@ export async function createDocumentForOrg(orgId: string, data: {
     .values({ orgId, ...data })
     .returning({ id: documents.id });
   return row;
+}
+
+export async function approveDocumentForOrg(orgId: string, id: string) {
+  const [row] = await db
+    .update(documents)
+    .set({ status: "active" })
+    .where(
+      and(
+        eq(documents.orgId, orgId),
+        eq(documents.id, id),
+        eq(documents.status, "pending_review"),
+      ),
+    )
+    .returning({ id: documents.id, processId: documents.processId });
+  return row ?? null;
 }
 
 export async function markDocumentReplaced(orgId: string, id: string, replacedById: string) {

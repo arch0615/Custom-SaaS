@@ -86,6 +86,7 @@ export function DocumentsView({
                         processId={processId}
                         documentId={doc.id}
                         filename={doc.filename}
+                        status={doc.status}
                         downloadUrl={`/api/documents/${doc.id}/download`}
                       />
                     )}

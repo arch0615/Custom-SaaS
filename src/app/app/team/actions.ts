@@ -56,7 +56,7 @@ export async function inviteTeamMemberAction(
     subject: `Você foi convidado para ${session.orgName}`,
     text: `Olá, ${name}.
 
-Você foi convidado para acessar ${session.orgName} no Customs SaaS.
+Você foi convidado para acessar ${session.orgName} no Aduanasync.
 
 Aceite o convite e defina sua senha em: ${inviteUrl}
 

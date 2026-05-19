@@ -14,6 +14,7 @@ import { StageProgress } from "@/components/portal/stage-progress";
 import { TimelineView } from "@/components/processes/timeline-view";
 import { DocumentsView } from "@/components/processes/documents-view";
 import { RequestUpdateButton } from "./request-update-button";
+import { ClientUploadDocument } from "./upload-document";
 
 const dateFmt = new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
 
@@ -124,13 +125,18 @@ export default async function PortalProcessPage({
       </Card>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between gap-3">
           <CardTitle className="text-base">
             Documentos
             {documents.length > 0 && (
               <span className="ml-2 text-sm font-normal text-muted-foreground">{documents.length}</span>
             )}
           </CardTitle>
+          <ClientUploadDocument
+            processId={proc.id}
+            impersonateId={impersonating ? customer.id : undefined}
+            disabled={impersonating}
+          />
         </CardHeader>
         <CardContent>
           <DocumentsView processId={proc.id} rows={documents} canWrite={false} />

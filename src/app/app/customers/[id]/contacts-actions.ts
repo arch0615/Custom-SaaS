@@ -97,7 +97,7 @@ export async function addContactAction(
       subject: `Acesso ao portal de ${session.orgName}`,
       text: `Olá, ${name}.
 
-Sua empresa ${customer.legalName} está sendo acompanhada por ${session.orgName} no Customs SaaS.
+Sua empresa ${customer.legalName} está sendo acompanhada por ${session.orgName} no Aduanasync.
 
 Aceite o convite e defina sua senha em: ${inviteUrl}
 

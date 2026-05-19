@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useId, useRef, useState, useTransition } from "react";
-import { Download, MoreHorizontal, RefreshCcw, Trash2 } from "lucide-react";
+import { Check, Download, MoreHorizontal, RefreshCcw, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,8 +21,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import type { DocumentStatus } from "@/lib/data/documents-types";
 import {
+  approveDocumentAction,
   deleteDocumentAction,
+  rejectDocumentAction,
   replaceDocumentAction,
   type DocumentFormState,
 } from "./document-actions";
@@ -36,16 +39,22 @@ export function DocumentRowActions({
   processId,
   documentId,
   filename,
+  status,
   downloadUrl,
 }: {
   processId: string;
   documentId: string;
   filename: string;
+  status: DocumentStatus;
   downloadUrl: string;
 }) {
+  const pending = status === "pending_review";
   const [replaceOpen, setReplaceOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [rejectOpen, setRejectOpen] = useState(false);
   const [pendingDelete, startDelete] = useTransition();
+  const [pendingApprove, startApprove] = useTransition();
+  const [pendingReject, startReject] = useTransition();
   const fileId = useId();
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -66,6 +75,38 @@ export function DocumentRowActions({
 
   return (
     <>
+      {pending && (
+        <div className="hidden gap-2 sm:flex">
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={pendingApprove}
+            onClick={() =>
+              startApprove(async () => {
+                try {
+                  await approveDocumentAction(processId, documentId);
+                  toast.success("Documento aprovado.");
+                } catch (err) {
+                  toast.error(err instanceof Error ? err.message : "Falha ao aprovar.");
+                }
+              })
+            }
+          >
+            <Check className="size-4" />
+            Aprovar
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            disabled={pendingReject}
+            onClick={() => setRejectOpen(true)}
+          >
+            <X className="size-4" />
+            Rejeitar
+          </Button>
+        </div>
+      )}
+
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" size="icon" className="size-8" aria-label="Mais ações">
@@ -79,17 +120,47 @@ export function DocumentRowActions({
               Baixar
             </a>
           </DropdownMenuItem>
-          <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setReplaceOpen(true); }}>
-            <RefreshCcw className="mr-2 size-4" />
-            Reenviar
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            onSelect={(e) => { e.preventDefault(); setDeleteOpen(true); }}
-            className="text-destructive focus:text-destructive"
-          >
-            <Trash2 className="mr-2 size-4" />
-            Remover
-          </DropdownMenuItem>
+          {pending ? (
+            <>
+              <DropdownMenuItem
+                onSelect={(e) => {
+                  e.preventDefault();
+                  startApprove(async () => {
+                    try {
+                      await approveDocumentAction(processId, documentId);
+                      toast.success("Documento aprovado.");
+                    } catch (err) {
+                      toast.error(err instanceof Error ? err.message : "Falha ao aprovar.");
+                    }
+                  });
+                }}
+              >
+                <Check className="mr-2 size-4" />
+                Aprovar
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onSelect={(e) => { e.preventDefault(); setRejectOpen(true); }}
+                className="text-destructive focus:text-destructive"
+              >
+                <X className="mr-2 size-4" />
+                Rejeitar
+              </DropdownMenuItem>
+            </>
+          ) : (
+            <>
+              <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setReplaceOpen(true); }}>
+                <RefreshCcw className="mr-2 size-4" />
+                Reenviar
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onSelect={(e) => { e.preventDefault(); setDeleteOpen(true); }}
+                className="text-destructive focus:text-destructive"
+              >
+                <Trash2 className="mr-2 size-4" />
+                Remover
+              </DropdownMenuItem>
+            </>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
 
@@ -150,6 +221,40 @@ export function DocumentRowActions({
               }
             >
               {pendingDelete ? "Removendo..." : "Remover"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={rejectOpen} onOpenChange={setRejectOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Rejeitar documento?</DialogTitle>
+            <DialogDescription>
+              <strong>{filename}</strong> será descartado. O cliente não receberá uma notificação
+              automática — alinhe com ele por outro canal se necessário.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="ghost">Cancelar</Button>
+            </DialogClose>
+            <Button
+              variant="destructive"
+              disabled={pendingReject}
+              onClick={() =>
+                startReject(async () => {
+                  try {
+                    await rejectDocumentAction(processId, documentId);
+                    toast.success("Documento rejeitado.");
+                    setRejectOpen(false);
+                  } catch (err) {
+                    toast.error(err instanceof Error ? err.message : "Falha ao rejeitar.");
+                  }
+                })
+              }
+            >
+              {pendingReject ? "Rejeitando..." : "Rejeitar"}
             </Button>
           </DialogFooter>
         </DialogContent>

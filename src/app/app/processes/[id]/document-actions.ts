@@ -7,12 +7,15 @@ import { revalidatePath } from "next/cache";
 import { requireSession } from "@/lib/auth/session";
 import { getProcessForOrg } from "@/lib/data/processes";
 import {
+  approveDocumentForOrg,
   createDocumentForOrg,
   DOCUMENT_TYPE_LABEL,
   getDocumentForOrg,
   markDocumentReplaced,
   softDeleteDocumentForOrg,
+  timelineTitleForApproval,
   timelineTitleForDelete,
+  timelineTitleForRejection,
   timelineTitleForReplace,
   timelineTitleForUpload,
   type DocumentType,
@@ -188,4 +191,52 @@ export async function deleteDocumentAction(processId: string, documentId: string
   });
 
   revalidatePath(`/app/processes/${processId}`);
+}
+
+export async function approveDocumentAction(processId: string, documentId: string): Promise<void> {
+  const session = await requireSession();
+  if (session.role === "client") throw new Error("Sem permissão.");
+
+  const doc = await getDocumentForOrg(session.orgId, documentId);
+  if (!doc || doc.processId !== processId) throw new Error("Documento não encontrado.");
+  if (doc.status !== "pending_review") throw new Error("Documento não está aguardando revisão.");
+
+  const result = await approveDocumentForOrg(session.orgId, documentId);
+  if (!result) throw new Error("Documento já revisado.");
+
+  await createTimelineEvent({
+    orgId: session.orgId,
+    processId,
+    title: timelineTitleForApproval(doc.type, doc.filename),
+    source: "system",
+    actorId: session.userId,
+  });
+
+  revalidatePath(`/app/processes/${processId}`);
+  revalidatePath(`/portal/processes/${processId}`);
+  revalidatePath("/app");
+}
+
+export async function rejectDocumentAction(processId: string, documentId: string): Promise<void> {
+  const session = await requireSession();
+  if (session.role === "client") throw new Error("Sem permissão.");
+
+  const doc = await getDocumentForOrg(session.orgId, documentId);
+  if (!doc || doc.processId !== processId) throw new Error("Documento não encontrado.");
+  if (doc.status !== "pending_review") throw new Error("Documento não está aguardando revisão.");
+
+  const result = await softDeleteDocumentForOrg(session.orgId, documentId, session.userId);
+  if (!result) throw new Error("Documento já removido.");
+
+  await createTimelineEvent({
+    orgId: session.orgId,
+    processId,
+    title: timelineTitleForRejection(doc.type, doc.filename),
+    source: "system",
+    actorId: session.userId,
+  });
+
+  revalidatePath(`/app/processes/${processId}`);
+  revalidatePath(`/portal/processes/${processId}`);
+  revalidatePath("/app");
 }
