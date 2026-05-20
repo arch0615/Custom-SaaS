@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 
 export default function ProcessNotFound() {
   return (
-    <div className="mx-auto w-full max-w-md space-y-4 p-12 text-center">
+    <div className="mx-auto w-full max-w-md space-y-4 p-8 text-center">
       <h1 className="text-xl font-semibold">Processo não encontrado</h1>
       <p className="text-sm text-muted-foreground">
         O processo que você tentou abrir não existe ou foi removido.

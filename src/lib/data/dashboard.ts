@@ -8,6 +8,7 @@ export type DashboardKpis = {
   delayed: number;
   completedThisMonth: number;
   pendingDocReview: number;
+  newCustomersThisMonth: number;
 };
 
 export async function getDashboardKpis(orgId: string): Promise<DashboardKpis> {
@@ -15,18 +16,21 @@ export async function getDashboardKpis(orgId: string): Promise<DashboardKpis> {
     SELECT
       (SELECT count(*) FROM processes
         WHERE org_id = ${orgId} AND deleted_at IS NULL
-          AND stage NOT IN ('released', 'delivered'))::int AS open,
+          AND stage <> 'pago')::int AS open,
       (SELECT count(*) FROM processes
         WHERE org_id = ${orgId} AND deleted_at IS NULL
-          AND stage NOT IN ('released', 'delivered')
+          AND stage NOT IN ('atracado', 'liberado', 'aguarda_pagamento', 'pago')
           AND arrival_date < CURRENT_DATE)::int AS delayed,
       (SELECT count(*) FROM processes
         WHERE org_id = ${orgId} AND deleted_at IS NULL
-          AND stage = 'delivered'
+          AND stage = 'pago'
           AND updated_at >= date_trunc('month', now()))::int AS completed_this_month,
       (SELECT count(*) FROM documents
         WHERE org_id = ${orgId} AND deleted_at IS NULL
-          AND status = 'pending_review')::int AS pending_doc_review
+          AND status = 'pending_review')::int AS pending_doc_review,
+      (SELECT count(*) FROM customers
+        WHERE org_id = ${orgId} AND deleted_at IS NULL
+          AND created_at >= date_trunc('month', now()))::int AS new_customers_this_month
   `);
   const r = result.rows[0] as Record<string, number>;
   return {
@@ -34,7 +38,88 @@ export async function getDashboardKpis(orgId: string): Promise<DashboardKpis> {
     delayed: Number(r.delayed ?? 0),
     completedThisMonth: Number(r.completed_this_month ?? 0),
     pendingDocReview: Number(r.pending_doc_review ?? 0),
+    newCustomersThisMonth: Number(r.new_customers_this_month ?? 0),
   };
+}
+
+export type DashboardDeltas = {
+  newProcessesThisMonth: number;
+  newProcessesLastMonth: number;
+  completedLastMonth: number;
+  pendingDocsWeekAgo: number;
+  newCustomersLastMonth: number;
+};
+
+export async function getDashboardDeltas(orgId: string): Promise<DashboardDeltas> {
+  const result = await db.execute(sql`
+    SELECT
+      (SELECT count(*) FROM processes
+        WHERE org_id = ${orgId} AND deleted_at IS NULL
+          AND created_at >= date_trunc('month', now()))::int AS new_processes_this_month,
+      (SELECT count(*) FROM processes
+        WHERE org_id = ${orgId} AND deleted_at IS NULL
+          AND created_at >= date_trunc('month', now()) - interval '1 month'
+          AND created_at <  date_trunc('month', now()))::int AS new_processes_last_month,
+      (SELECT count(*) FROM processes
+        WHERE org_id = ${orgId} AND deleted_at IS NULL
+          AND stage = 'pago'
+          AND updated_at >= date_trunc('month', now()) - interval '1 month'
+          AND updated_at <  date_trunc('month', now()))::int AS completed_last_month,
+      (SELECT count(*) FROM documents
+        WHERE org_id = ${orgId} AND deleted_at IS NULL
+          AND status = 'pending_review'
+          AND uploaded_at < now() - interval '7 days')::int AS pending_docs_week_ago,
+      (SELECT count(*) FROM customers
+        WHERE org_id = ${orgId} AND deleted_at IS NULL
+          AND created_at >= date_trunc('month', now()) - interval '1 month'
+          AND created_at <  date_trunc('month', now()))::int AS new_customers_last_month
+  `);
+  const r = result.rows[0] as Record<string, number>;
+  return {
+    newProcessesThisMonth: Number(r.new_processes_this_month ?? 0),
+    newProcessesLastMonth: Number(r.new_processes_last_month ?? 0),
+    completedLastMonth: Number(r.completed_last_month ?? 0),
+    pendingDocsWeekAgo: Number(r.pending_docs_week_ago ?? 0),
+    newCustomersLastMonth: Number(r.new_customers_last_month ?? 0),
+  };
+}
+
+export type MonthlyPoint = { label: string; opened: number; closed: number };
+
+const MONTH_LABELS_PT = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+
+export async function getMonthlyOpenedClosed(orgId: string, months = 5): Promise<MonthlyPoint[]> {
+  const result = await db.execute(sql`
+    WITH months AS (
+      SELECT generate_series(
+        date_trunc('month', now()) - (${months - 1} || ' months')::interval,
+        date_trunc('month', now()),
+        '1 month'::interval
+      ) AS month_start
+    )
+    SELECT
+      m.month_start,
+      (SELECT count(*) FROM processes p
+        WHERE p.org_id = ${orgId} AND p.deleted_at IS NULL
+          AND p.created_at >= m.month_start
+          AND p.created_at <  m.month_start + interval '1 month')::int AS opened,
+      (SELECT count(*) FROM processes p
+        WHERE p.org_id = ${orgId} AND p.deleted_at IS NULL
+          AND p.stage = 'pago'
+          AND p.updated_at >= m.month_start
+          AND p.updated_at <  m.month_start + interval '1 month')::int AS closed
+    FROM months m
+    ORDER BY m.month_start ASC
+  `);
+  return result.rows.map((r) => {
+    const o = r as Record<string, unknown>;
+    const d = new Date(o.month_start as string);
+    return {
+      label: MONTH_LABELS_PT[d.getMonth()],
+      opened: Number(o.opened ?? 0),
+      closed: Number(o.closed ?? 0),
+    };
+  });
 }
 
 export type StageCount = { stage: ProcessStage; count: number };
@@ -81,7 +166,7 @@ export async function getNextArrivals(orgId: string, days = 7): Promise<NextArri
     JOIN customers c ON c.id = p.customer_id
     WHERE p.org_id = ${orgId}
       AND p.deleted_at IS NULL
-      AND p.stage NOT IN ('released', 'delivered')
+      AND p.stage NOT IN ('atracado', 'liberado', 'aguarda_pagamento', 'pago')
       AND p.arrival_date IS NOT NULL
       AND p.arrival_date >= CURRENT_DATE
       AND p.arrival_date <= (CURRENT_DATE + ${`${days} days`}::interval)

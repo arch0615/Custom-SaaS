@@ -5,42 +5,47 @@ import type { ProcessStage } from "@/lib/data/processes";
 
 export function StageProgress({ current }: { current: ProcessStage }) {
   const currentIdx = stageIndex(current);
+  const total = STAGE_ORDER.length;
 
   return (
-    <ol className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-      {STAGE_ORDER.map((stage, i) => {
-        const state = i < currentIdx ? "done" : i === currentIdx ? "current" : "todo";
-        return (
-          <li key={stage} className="flex flex-col items-start gap-2">
-            <div className="flex items-center gap-2">
-              <span
-                className={cn(
-                  "flex size-6 shrink-0 items-center justify-center rounded-full border text-xs font-medium",
-                  state === "done" && "border-primary bg-primary text-primary-foreground",
-                  state === "current" && "border-foreground bg-foreground text-background",
-                  state === "todo" && "border-border bg-card text-muted-foreground",
-                )}
-              >
-                {state === "done" ? <Check className="size-3.5" /> : i + 1}
-              </span>
-              <span
-                className={cn(
-                  "text-sm font-medium",
-                  state === "todo" ? "text-muted-foreground" : "text-foreground",
-                )}
-              >
-                {STAGE_LABEL[stage]}
-              </span>
-            </div>
-            <div
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+        <span className="text-sm font-medium">
+          Etapa atual: <span className="text-foreground">{STAGE_LABEL[current]}</span>
+        </span>
+        <span className="text-xs text-muted-foreground">
+          ({currentIdx + 1} de {total})
+        </span>
+      </div>
+
+      <ol className="-mx-1 flex snap-x snap-mandatory gap-2 overflow-x-auto pb-3 sm:flex-wrap sm:overflow-visible">
+        {STAGE_ORDER.map((stage, i) => {
+          const state = i < currentIdx ? "done" : i === currentIdx ? "current" : "todo";
+          return (
+            <li
+              key={stage}
               className={cn(
-                "h-1 w-full rounded-full",
-                state === "todo" ? "bg-muted" : state === "current" ? "bg-foreground" : "bg-primary",
+                "flex shrink-0 snap-start items-center gap-2 rounded-full border px-3 py-1.5 text-xs",
+                state === "done" && "border-primary bg-primary/10 text-primary",
+                state === "current" && "border-foreground bg-foreground text-background",
+                state === "todo" && "border-border bg-card text-muted-foreground",
               )}
-            />
-          </li>
-        );
-      })}
-    </ol>
+            >
+              <span
+                className={cn(
+                  "flex size-4 items-center justify-center rounded-full text-[10px] font-medium leading-none",
+                  state === "done" && "bg-primary text-primary-foreground",
+                  state === "current" && "bg-background text-foreground",
+                  state === "todo" && "bg-muted text-muted-foreground",
+                )}
+              >
+                {state === "done" ? <Check className="size-2.5" /> : i + 1}
+              </span>
+              <span className="whitespace-nowrap">{STAGE_LABEL[stage]}</span>
+            </li>
+          );
+        })}
+      </ol>
+    </div>
   );
 }

@@ -1,22 +1,40 @@
 import type { ProcessStage, ProcessModal, Incoterm } from "@/lib/data/processes";
 
 export const STAGE_ORDER: ProcessStage[] = [
-  "docs_received",
-  "shipment",
-  "in_transit",
-  "customs",
-  "released",
-  "delivered",
+  "aguarda_prontidao_carga",
+  "aguarda_booking",
+  "aguarda_draft",
+  "aguarda_aprovacao_draft",
+  "aguarda_draft_atualizado",
+  "aguarda_embarque",
+  "aguarda_hbl_final",
+  "aguarda_transbordo",
+  "aguarda_desconsolidacao",
+  "aguarda_chegada",
+  "atracado",
+  "liberado",
+  "aguarda_pagamento",
+  "pago",
 ];
 
 export const STAGE_LABEL: Record<ProcessStage, string> = {
-  docs_received: "Documentação Recebida",
-  shipment: "Embarque",
-  in_transit: "Em Trânsito",
-  customs: "Desembaraço",
-  released: "Liberado",
-  delivered: "Entrega Finalizada",
+  aguarda_prontidao_carga: "Aguarda Prontidão de Carga",
+  aguarda_booking: "Aguarda Booking",
+  aguarda_draft: "Aguarda Draft",
+  aguarda_aprovacao_draft: "Aguarda Aprovação de Draft",
+  aguarda_draft_atualizado: "Aguarda Draft Atualizado",
+  aguarda_embarque: "Aguarda Embarque",
+  aguarda_hbl_final: "Aguarda HBL Final",
+  aguarda_transbordo: "Aguarda Transbordo",
+  aguarda_desconsolidacao: "Aguarda Desconsolidação",
+  aguarda_chegada: "Aguarda Chegada",
+  atracado: "Atracado",
+  liberado: "Liberado",
+  aguarda_pagamento: "Aguarda Pagamento",
+  pago: "Pago",
 };
+
+export const STAGE_TERMINAL: ProcessStage = "pago";
 
 export const STAGE_OPTIONS = STAGE_ORDER.map((s) => ({ value: s, label: STAGE_LABEL[s] }));
 
@@ -50,13 +68,17 @@ export const INCOTERM_OPTIONS: { value: Incoterm; label: string }[] = [
   { value: "DDP", label: "DDP · Delivered Duty Paid" },
 ];
 
+// Stages reached after the cargo lands.
+const POST_ARRIVAL_STAGES: ProcessStage[] = ["atracado", "liberado", "aguarda_pagamento", "pago"];
+
 export function isOpen(stage: ProcessStage): boolean {
-  return stage !== "released" && stage !== "delivered";
+  return stage !== "pago";
 }
 
 export function isDelayed(stage: ProcessStage, arrivalDate: string | null): boolean {
   if (!arrivalDate) return false;
-  if (!isOpen(stage)) return false;
+  // Already arrived (or beyond) — not "delayed".
+  if (POST_ARRIVAL_STAGES.includes(stage)) return false;
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   return new Date(arrivalDate) < today;

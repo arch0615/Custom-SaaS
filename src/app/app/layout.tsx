@@ -35,6 +35,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       orgName={session.orgName}
       userName={session.userName}
       userEmail={session.userEmail}
+      userRole={session.role}
       signOutAction={signOutAction}
       bellItems={bellItems}
       unreadCount={unread}

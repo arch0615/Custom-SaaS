@@ -39,7 +39,7 @@ export default async function PortalHomePage({
   const q = impersonateQuery(impersonating, customer.id);
 
   return (
-    <div className="mx-auto w-full max-w-2xl space-y-6 p-4 sm:p-6">
+    <div className="mx-auto w-full space-y-6 px-6 py-4">
       <header className="space-y-1">
         <h1 className="text-2xl font-semibold tracking-tight">Olá, {customer.tradeName ?? customer.legalName}</h1>
         <p className="text-sm text-muted-foreground">

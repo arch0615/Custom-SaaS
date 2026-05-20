@@ -7,6 +7,7 @@ import { getProcessForOrg } from "@/lib/data/processes";
 import { listCustomersForOrg, getCustomerForOrg } from "@/lib/data/customers";
 import { listTimelineForProcess } from "@/lib/data/timeline";
 import { listDocumentsForProcess } from "@/lib/data/documents";
+import { listTrackingForProcess } from "@/lib/data/tracking";
 import { MODAL_LABEL, isDelayed, stageBadgeVariant, STAGE_LABEL } from "@/lib/process-status";
 
 import { Badge } from "@/components/ui/badge";
@@ -20,6 +21,7 @@ import { TimelineView } from "@/components/processes/timeline-view";
 import { AddTimelineEntry } from "./add-timeline-entry";
 import { DocumentsView } from "@/components/processes/documents-view";
 import { UploadDocument } from "./upload-document";
+import { TrackingView } from "./tracking-view";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -42,11 +44,12 @@ export default async function ProcessDetailPage({ params }: { params: Promise<{ 
   const proc = await getProcessForOrg(session.orgId, id);
   if (!proc) notFound();
 
-  const [customer, customers, events, documents] = await Promise.all([
+  const [customer, customers, events, documents, tracking] = await Promise.all([
     getCustomerForOrg(session.orgId, proc.customerId),
     listCustomersForOrg(session.orgId),
     listTimelineForProcess(session.orgId, proc.id),
     listDocumentsForProcess(session.orgId, proc.id),
+    listTrackingForProcess(session.orgId, proc.id),
   ]);
 
   const delayed = isDelayed(proc.stage, proc.arrivalDate);
@@ -54,7 +57,7 @@ export default async function ProcessDetailPage({ params }: { params: Promise<{ 
   const canDeleteEvents = session.role === "broker_admin";
 
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-6 p-6">
+    <div className="mx-auto w-full space-y-6 px-6 py-4">
       <div>
         <Link
           href="/app/processes"
@@ -106,6 +109,14 @@ export default async function ProcessDetailPage({ params }: { params: Promise<{ 
               <span className="ml-1 text-xs text-muted-foreground">{documents.length}</span>
             )}
           </TabsTrigger>
+          {canWriteTimeline && (
+            <TabsTrigger value="tracking">
+              Rastreamento
+              {tracking.length > 0 && (
+                <span className="ml-1 text-xs text-muted-foreground">{tracking.length}</span>
+              )}
+            </TabsTrigger>
+          )}
           <TabsTrigger value="edit">Editar</TabsTrigger>
         </TabsList>
 
@@ -172,6 +183,12 @@ export default async function ProcessDetailPage({ params }: { params: Promise<{ 
           )}
           <DocumentsView processId={proc.id} rows={documents} canWrite={canWriteTimeline} />
         </TabsContent>
+
+        {canWriteTimeline && (
+          <TabsContent value="tracking" className="mt-6">
+            <TrackingView processId={proc.id} rows={tracking} />
+          </TabsContent>
+        )}
 
         <TabsContent value="edit" className="mt-6">
           <ProcessEditTab

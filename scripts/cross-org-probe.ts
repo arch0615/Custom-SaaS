@@ -86,7 +86,7 @@ async function seedOrg(label: string) {
         customerId: customer.id,
         reference: `PROBE-${label}-${Date.now().toString(36)}`,
         modal: "maritime",
-        stage: "docs_received",
+        stage: "aguarda_prontidao_carga",
         importerName: `Imp ${label}`,
         exporterName: `Exp ${label}`,
         origin: `${label}-origin`,

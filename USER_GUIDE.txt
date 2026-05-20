@@ -1,0 +1,105 @@
+ADUANASYNC — Guia rápido do usuário
+===================================
+
+URL: http://aduanasync.com.br
+
+
+1) ENTRAR
+---------
+   - Acesse /login com e-mail e senha.
+   - Despachantes caem em /app, clientes em /portal.
+
+
+2) MENU LATERAL (broker_admin / equipe)
+---------------------------------------
+   Dashboard      visão geral, KPIs, atividade recente
+   Processos      lista de despachos com busca e filtros
+   Clientes       cadastro e portal de convites
+   Equipe         membros da empresa (apenas admin)
+   Configurações  dados da empresa, notificações, segurança
+
+
+3) NOVO CLIENTE
+---------------
+   - Clientes → "Novo cliente".
+   - Preencha razão social, CNPJ e contato principal.
+   - Marque "Acesso ao portal" para gerar convite por e-mail.
+   - O link do convite também aparece em Clientes → Convites do portal.
+
+
+4) CONVIDAR UM CONTATO PARA O PORTAL
+------------------------------------
+   - Abra o cliente → aba Contatos → "Adicionar contato".
+   - Marque "Acesso ao portal" antes de salvar.
+   - Copie o link na seção Convites do portal e envie ao cliente.
+
+
+5) NOVO PROCESSO
+----------------
+   - Processos → "Novo processo".
+   - Selecione cliente, modal (Marítimo/Aéreo) e preencha referências.
+   - Origem/destino, datas e numerações ficam visíveis para o cliente.
+
+
+6) AVANÇAR ETAPA
+----------------
+   - Abra o processo → use o seletor de etapas no topo.
+   - Cada avanço gera um evento na timeline automaticamente.
+   - O cliente recebe notificação por e-mail (se Resend estiver ligado)
+     e no portal.
+
+
+7) DOCUMENTOS
+-------------
+   - Aba Documentos do processo → "Adicionar documento".
+   - Tipos: Invoice, Packing List, BL/AWB, DI/DUE, Comprovante, Outros.
+   - Tamanho máximo: 25 MB.
+   - Cliente também pode enviar documentos pelo portal — eles aparecem
+     com a tag "Aguardando revisão" e botões Aprovar / Rejeitar para a
+     equipe do despachante.
+
+
+8) CONVIDAR MEMBRO DA EQUIPE
+----------------------------
+   - Equipe → "Convidar membro".
+   - Escolha papel: Administrador ou Equipe.
+   - O link do convite é exibido após o envio (copiar e enviar manual,
+     se preferir).
+
+
+9) NOTIFICAÇÕES
+---------------
+   - Sino no topo direito mostra avisos não lidos.
+   - Preferências por canal em Configurações → Notificações.
+   - E-mails vão para o endereço cadastrado em cada usuário.
+
+
+10) VER COMO O CLIENTE
+----------------------
+   Como Administrador, acesse:
+
+      http://aduanasync.com.br/portal?impersonate=<ID_DO_CLIENTE>
+
+   - O ID está na barra de endereço quando você abre o cliente em /app.
+   - Banner âmbar aparece confirmando o modo preview.
+   - Ações que mudariam dados ficam desabilitadas (somente leitura).
+
+
+11) PORTAL DO CLIENTE
+---------------------
+   - /portal lista todos os processos do cliente logado.
+   - Clique em um processo para ver etapa, documentos e linha do tempo.
+   - O cliente pode pedir atualização pelo botão "Solicitar atualização".
+   - O cliente pode enviar documento clicando em "Enviar documento" na
+     aba Documentos — o despachante revisa antes de publicar.
+
+
+12) PERFIL E SENHA
+------------------
+   - Avatar no topo direito → Perfil para alterar nome.
+   - Configurações → Segurança para alterar senha.
+
+
+SUPORTE
+-------
+   E-mail: contato@aduanasync.com.br

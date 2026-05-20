@@ -1,4 +1,4 @@
-import { and, desc, eq, isNotNull, sql } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { db } from "@/db/client";
 import { users } from "@/db/schema/auth";
 import { orgMembers } from "@/db/schema/organizations";
@@ -42,6 +42,87 @@ export async function listOrgTeamMembers(orgId: string): Promise<TeamMemberRow[]
     invited: r.passwordHash === null,
     joinedAt: r.joinedAt,
   }));
+}
+
+export type TeamMemberWithStats = TeamMemberRow & {
+  processesTouched: number;
+};
+
+export async function listOrgTeamMembersWithStats(
+  orgId: string,
+): Promise<TeamMemberWithStats[]> {
+  const result = await db.execute(sql`
+    SELECT
+      u.id           AS user_id,
+      u.name         AS name,
+      u.email        AS email,
+      om.role        AS role,
+      u.password_hash IS NULL AS invited,
+      om.created_at  AS joined_at,
+      COALESCE(touched.process_count, 0)::int AS processes_touched
+    FROM org_members om
+    INNER JOIN users u ON u.id = om.user_id
+    LEFT JOIN LATERAL (
+      SELECT COUNT(DISTINCT te.process_id) AS process_count
+      FROM timeline_events te
+      INNER JOIN processes p ON p.id = te.process_id
+      WHERE te.actor_id = u.id
+        AND p.org_id = ${orgId}
+        AND p.deleted_at IS NULL
+    ) touched ON true
+    WHERE om.org_id = ${orgId}
+      AND om.role IN ('broker_admin', 'broker_staff')
+    ORDER BY om.created_at DESC
+  `);
+  return result.rows.map((r) => {
+    const o = r as Record<string, unknown>;
+    return {
+      userId: o.user_id as string,
+      name: (o.name as string | null) ?? null,
+      email: o.email as string,
+      role: o.role as MemberRole,
+      invited: Boolean(o.invited),
+      joinedAt: new Date(o.joined_at as string),
+      processesTouched: Number(o.processes_touched ?? 0),
+    };
+  });
+}
+
+export type TeamCounts = {
+  active: number;
+  pending: number;
+  totalProcesses: number;
+  total: number;
+};
+
+export async function getTeamCounts(orgId: string): Promise<TeamCounts> {
+  const result = await db.execute(sql`
+    SELECT
+      (SELECT COUNT(*) FROM org_members om
+        INNER JOIN users u ON u.id = om.user_id
+        WHERE om.org_id = ${orgId}
+          AND om.role IN ('broker_admin', 'broker_staff')
+          AND u.password_hash IS NOT NULL)::int AS active,
+      (SELECT COUNT(*) FROM org_members om
+        INNER JOIN users u ON u.id = om.user_id
+        WHERE om.org_id = ${orgId}
+          AND om.role IN ('broker_admin', 'broker_staff')
+          AND u.password_hash IS NULL)::int AS pending,
+      (SELECT COUNT(*) FROM processes
+        WHERE org_id = ${orgId}
+          AND deleted_at IS NULL
+          AND stage <> 'pago')::int AS total_processes,
+      (SELECT COUNT(*) FROM org_members
+        WHERE org_id = ${orgId}
+          AND role IN ('broker_admin', 'broker_staff'))::int AS total
+  `);
+  const r = result.rows[0] as Record<string, number>;
+  return {
+    active: Number(r.active ?? 0),
+    pending: Number(r.pending ?? 0),
+    totalProcesses: Number(r.total_processes ?? 0),
+    total: Number(r.total ?? 0),
+  };
 }
 
 export async function getOrgMember(orgId: string, userId: string) {

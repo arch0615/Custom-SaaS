@@ -121,6 +121,70 @@ export async function getCustomerForClientUser(orgId: string, userId: string) {
   return row ?? null;
 }
 
+export type CustomerListWithStats = CustomerListRow & {
+  primaryContactName: string | null;
+  primaryContactEmail: string | null;
+  primaryContactPhone: string | null;
+  activeProcesses: number;
+  totalProcesses: number;
+};
+
+export async function listCustomersWithStatsForOrg(orgId: string): Promise<CustomerListWithStats[]> {
+  const result = await db.execute(sql`
+    SELECT
+      c.id,
+      c.legal_name,
+      c.trade_name,
+      c.cnpj,
+      c.email,
+      c.phone,
+      c.type,
+      c.created_at,
+      c.updated_at,
+      pc.name AS primary_contact_name,
+      pc.email AS primary_contact_email,
+      pc.phone AS primary_contact_phone,
+      COALESCE(stats.active_count, 0)::int AS active_processes,
+      COALESCE(stats.total_count, 0)::int AS total_processes
+    FROM customers c
+    LEFT JOIN LATERAL (
+      SELECT name, email, phone
+      FROM customer_contacts
+      WHERE customer_id = c.id
+      ORDER BY is_primary DESC, created_at ASC
+      LIMIT 1
+    ) pc ON true
+    LEFT JOIN LATERAL (
+      SELECT
+        COUNT(*) FILTER (WHERE stage <> 'pago') AS active_count,
+        COUNT(*) AS total_count
+      FROM processes
+      WHERE customer_id = c.id AND org_id = c.org_id AND deleted_at IS NULL
+    ) stats ON true
+    WHERE c.org_id = ${orgId} AND c.deleted_at IS NULL
+    ORDER BY c.legal_name ASC
+  `);
+  return result.rows.map((r) => {
+    const o = r as Record<string, unknown>;
+    return {
+      id: o.id as string,
+      legalName: o.legal_name as string,
+      tradeName: (o.trade_name as string | null) ?? null,
+      cnpj: o.cnpj as string,
+      email: (o.email as string | null) ?? null,
+      phone: (o.phone as string | null) ?? null,
+      type: o.type as CustomerType,
+      createdAt: new Date(o.created_at as string),
+      updatedAt: new Date(o.updated_at as string),
+      primaryContactName: (o.primary_contact_name as string | null) ?? null,
+      primaryContactEmail: (o.primary_contact_email as string | null) ?? null,
+      primaryContactPhone: (o.primary_contact_phone as string | null) ?? null,
+      activeProcesses: Number(o.active_processes ?? 0),
+      totalProcesses: Number(o.total_processes ?? 0),
+    };
+  });
+}
+
 export async function restoreCustomerForOrg(orgId: string, id: string) {
   const result = await db
     .update(customers)

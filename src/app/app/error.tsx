@@ -17,7 +17,7 @@ export default function AppError({
   }, [error]);
 
   return (
-    <div className="mx-auto flex w-full max-w-md flex-col items-center gap-4 p-12 text-center">
+    <div className="mx-auto flex w-full max-w-md flex-col items-center gap-4 p-8 text-center">
       <div className="rounded-full bg-destructive/10 p-3 text-destructive">
         <AlertTriangle className="size-6" />
       </div>

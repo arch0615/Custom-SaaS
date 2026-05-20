@@ -4,7 +4,7 @@ import { KpiCardsSkeleton, PageHeaderSkeleton } from "@/components/skeletons/pag
 
 export default function AppDashboardLoading() {
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-6 p-6">
+    <div className="mx-auto w-full space-y-6 px-6 py-4">
       <PageHeaderSkeleton />
       <KpiCardsSkeleton />
       <section className="grid grid-cols-1 gap-4 lg:grid-cols-3">

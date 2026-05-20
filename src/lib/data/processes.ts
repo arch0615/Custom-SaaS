@@ -15,6 +15,8 @@ export type Incoterm = (typeof IncotermEnum.enumValues)[number];
 export type ProcessRow = typeof processes.$inferSelect;
 export type NewProcessRow = typeof processes.$inferInsert;
 
+export type CustomerType = "importer" | "exporter" | "both";
+
 export type ProcessListRow = {
   id: string;
   reference: string;
@@ -22,10 +24,13 @@ export type ProcessListRow = {
   stage: ProcessStage;
   customerId: string;
   customerName: string;
+  customerType: CustomerType;
   importerName: string;
   exporterName: string;
   origin: string;
   destination: string;
+  hblNumber: string | null;
+  shipmentDate: string | null;
   arrivalDate: string | null;
   containerNumber: string | null;
   createdAt: Date;
@@ -46,10 +51,13 @@ export async function listProcessesForOrg(
       stage: processes.stage,
       customerId: processes.customerId,
       customerName: customers.legalName,
+      customerType: customers.type,
       importerName: processes.importerName,
       exporterName: processes.exporterName,
       origin: processes.origin,
       destination: processes.destination,
+      hblNumber: processes.hblNumber,
+      shipmentDate: processes.shipmentDate,
       arrivalDate: processes.arrivalDate,
       containerNumber: processes.containerNumber,
       createdAt: processes.createdAt,

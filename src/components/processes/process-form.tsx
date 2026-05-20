@@ -145,7 +145,7 @@ export function ProcessForm({
             </div>
             <div className="space-y-2">
               <Label htmlFor="stage">Etapa *</Label>
-              <Select name="stage" defaultValue={defaults?.stage ?? "docs_received"} disabled={lockStage}>
+              <Select name="stage" defaultValue={defaults?.stage ?? "aguarda_prontidao_carga"} disabled={lockStage}>
                 <SelectTrigger id="stage"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {STAGE_OPTIONS.map((o) => (
@@ -154,7 +154,7 @@ export function ProcessForm({
                 </SelectContent>
               </Select>
               {lockStage && (
-                <input type="hidden" name="stage" value={defaults?.stage ?? "docs_received"} />
+                <input type="hidden" name="stage" value={defaults?.stage ?? "aguarda_prontidao_carga"} />
               )}
               <ErrorText msg={f.stage?.[0]} />
             </div>

@@ -3,7 +3,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export default function SettingsLoading() {
   return (
-    <div className="mx-auto w-full max-w-3xl space-y-6 p-6">
+    <div className="mx-auto w-full space-y-6 px-6 py-4">
       <div className="space-y-2">
         <Skeleton className="h-7 w-44" />
         <Skeleton className="h-4 w-72" />

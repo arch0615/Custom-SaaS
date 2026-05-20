@@ -23,12 +23,20 @@ const optionalDecimal = z
 
 const modalEnum = z.enum(["maritime", "air"]);
 const stageEnum = z.enum([
-  "docs_received",
-  "shipment",
-  "in_transit",
-  "customs",
-  "released",
-  "delivered",
+  "aguarda_prontidao_carga",
+  "aguarda_booking",
+  "aguarda_draft",
+  "aguarda_aprovacao_draft",
+  "aguarda_draft_atualizado",
+  "aguarda_embarque",
+  "aguarda_hbl_final",
+  "aguarda_transbordo",
+  "aguarda_desconsolidacao",
+  "aguarda_chegada",
+  "atracado",
+  "liberado",
+  "aguarda_pagamento",
+  "pago",
 ]);
 const INCOTERMS = ["EXW", "FCA", "FOB", "CFR", "CIF", "CPT", "CIP", "DAP", "DPU", "DDP"] as const;
 type Incoterm = (typeof INCOTERMS)[number];

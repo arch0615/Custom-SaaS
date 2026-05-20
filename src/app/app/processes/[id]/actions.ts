@@ -27,12 +27,20 @@ export type ProcessFormState = {
 };
 
 const stageSchema = z.enum([
-  "docs_received",
-  "shipment",
-  "in_transit",
-  "customs",
-  "released",
-  "delivered",
+  "aguarda_prontidao_carga",
+  "aguarda_booking",
+  "aguarda_draft",
+  "aguarda_aprovacao_draft",
+  "aguarda_draft_atualizado",
+  "aguarda_embarque",
+  "aguarda_hbl_final",
+  "aguarda_transbordo",
+  "aguarda_desconsolidacao",
+  "aguarda_chegada",
+  "atracado",
+  "liberado",
+  "aguarda_pagamento",
+  "pago",
 ]);
 
 export async function updateProcessAction(

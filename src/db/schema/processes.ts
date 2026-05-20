@@ -15,12 +15,20 @@ import { customers } from "./customers";
 export const processModal = pgEnum("process_modal", ["maritime", "air"]);
 
 export const processStage = pgEnum("process_stage", [
-  "docs_received",
-  "shipment",
-  "in_transit",
-  "customs",
-  "released",
-  "delivered",
+  "aguarda_prontidao_carga",
+  "aguarda_booking",
+  "aguarda_draft",
+  "aguarda_aprovacao_draft",
+  "aguarda_draft_atualizado",
+  "aguarda_embarque",
+  "aguarda_hbl_final",
+  "aguarda_transbordo",
+  "aguarda_desconsolidacao",
+  "aguarda_chegada",
+  "atracado",
+  "liberado",
+  "aguarda_pagamento",
+  "pago",
 ]);
 
 export const incoterm = pgEnum("incoterm", [
@@ -42,7 +50,7 @@ export const processes = pgTable(
     carrierReference: text("carrier_reference"),
 
     modal: processModal("modal").notNull().default("maritime"),
-    stage: processStage("stage").notNull().default("docs_received"),
+    stage: processStage("stage").notNull().default("aguarda_prontidao_carga"),
 
     importerName: text("importer_name").notNull(),
     exporterName: text("exporter_name").notNull(),
