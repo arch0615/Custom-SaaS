@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 
 import { requireSession } from "@/lib/auth/session";
+import { denyIfMissing } from "@/lib/auth/permissions";
 import { parseProcessForm } from "@/lib/validation/process";
 import {
   createProcessForOrg,
@@ -24,7 +25,7 @@ export async function createProcessAction(
   formData: FormData,
 ): Promise<ProcessFormState> {
   const session = await requireSession();
-  if (session.role === "client") return { error: "Sem permissão." };
+  const denied = denyIfMissing(session.role, "process:create"); if (denied) return denied;
 
   const parsed = parseProcessForm(formData);
   if (!parsed.success) {
@@ -42,6 +43,13 @@ export async function createProcessAction(
     return { fieldErrors: { reference: ["Outra referência igual já existe."] } };
   }
 
+  // Keep containerNumber in sync with first containers entry for legacy
+  // search + indexes.
+  const containerNumber =
+    data.containers.length > 0 && data.containers[0].number
+      ? data.containers[0].number
+      : data.containerNumber;
+
   const row = await createProcessForOrg(session.orgId, {
     customerId: data.customerId,
     reference: data.reference,
@@ -50,15 +58,21 @@ export async function createProcessAction(
     modal: data.modal,
     stage: data.stage,
     importerName: data.importerName,
+    notifyParty: data.notifyParty,
     exporterName: data.exporterName,
     origin: data.origin,
     destination: data.destination,
     hblNumber: data.hblNumber,
     mblNumber: data.mblNumber,
-    containerNumber: data.containerNumber,
+    containerNumber,
+    containers: data.containers,
+    invoiceNumber: data.invoiceNumber,
+    freeTime: data.freeTime,
+    insurance: data.insurance,
     shipmentDate: data.shipmentDate,
     arrivalDate: data.arrivalDate,
     transshipmentPort: data.transshipmentPort,
+    transshipmentVessel: data.transshipmentVessel,
     transshipmentArrival: data.transshipmentArrival,
     transshipmentDeparture: data.transshipmentDeparture,
     ceMaster: data.ceMaster,

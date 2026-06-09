@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
 
 import { requireSession } from "@/lib/auth/session";
+import { hasPermission } from "@/lib/auth/permissions";
 import { getCustomerForOrg } from "@/lib/data/customers";
 import { listProcessesForOrg } from "@/lib/data/processes";
 import { listContactsForCustomer } from "@/lib/data/contacts";
@@ -59,7 +60,9 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
             {customer.tradeName ? <> · {customer.tradeName}</> : null}
           </p>
         </div>
-        {!customer.deletedAt && <DeleteCustomerButton id={customer.id} name={customer.legalName} />}
+        {!customer.deletedAt && hasPermission(session.role, "customer:delete") && (
+          <DeleteCustomerButton id={customer.id} name={customer.legalName} />
+        )}
       </header>
 
       <Tabs defaultValue="data">

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
 import { requireSession } from "@/lib/auth/session";
+import { hasPermission } from "@/lib/auth/permissions";
 import { listCustomersForOrg } from "@/lib/data/customers";
 import { ProcessForm } from "@/components/processes/process-form";
 import { createProcessAction } from "./actions";
@@ -10,7 +11,7 @@ export const metadata = { title: "Novo processo" };
 
 export default async function NewProcessPage() {
   const session = await requireSession();
-  if (session.role === "client") redirect("/portal");
+  if (!hasPermission(session.role, "process:create")) redirect("/app");
 
   const customers = await listCustomersForOrg(session.orgId);
   if (customers.length === 0) redirect("/app/customers/new");

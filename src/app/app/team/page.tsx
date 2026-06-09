@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { ChevronDown, Clock, FolderOpen, Search, ShieldCheck, SlidersHorizontal, Users } from "lucide-react";
 
 import { requireSession } from "@/lib/auth/session";
+import { hasPermission } from "@/lib/auth/permissions";
 import { getTeamCounts, listOrgTeamMembersWithStats } from "@/lib/data/members";
 import { MemberCard, type MemberCardData } from "./member-card";
 import { InviteDialog } from "./invite-dialog";
@@ -14,7 +15,7 @@ const ROLE_LABEL: Record<MemberCardData["role"], string> = {
 };
 
 const ROLE_CHIP_TONE: Record<MemberCardData["role"], { wrap: string; dot: string }> = {
-  broker_admin: { wrap: "bg-teal-50 text-teal-700 ring-1 ring-teal-100", dot: "bg-teal-600" },
+  broker_admin: { wrap: "bg-primary/10 text-primary ring-1 ring-primary/20", dot: "bg-primary" },
   broker_staff: { wrap: "bg-amber-50 text-amber-700 ring-1 ring-amber-100", dot: "bg-amber-500" },
 };
 
@@ -30,13 +31,13 @@ function KpiCard({
   label: string;
 }) {
   return (
-    <article className="flex items-center gap-3 rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
+    <article className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
       <span className={`inline-flex size-10 shrink-0 items-center justify-center rounded-xl ${iconWrap}`}>
         <Icon className="size-5" />
       </span>
       <div>
-        <div className="text-2xl font-bold tracking-tight text-stone-900">{value}</div>
-        <div className="text-xs text-stone-500">{label}</div>
+        <div className="text-2xl font-bold tracking-tight text-slate-900">{value}</div>
+        <div className="text-xs text-slate-500">{label}</div>
       </div>
     </article>
   );
@@ -60,7 +61,11 @@ export default async function TeamPage({
   searchParams: Promise<{ q?: string }>;
 }) {
   const session = await requireSession();
-  if (session.role !== "broker_admin") redirect("/app");
+  if (!hasPermission(session.role, "team:view")) redirect("/app");
+
+  const canInvite = hasPermission(session.role, "team:invite");
+  const canChangeRole = hasPermission(session.role, "team:change_role");
+  const canRemove = hasPermission(session.role, "team:remove");
 
   const { q = "" } = await searchParams;
 
@@ -86,10 +91,10 @@ export default async function TeamPage({
 
   return (
     <div className="mx-auto w-full space-y-5 px-6 py-4">
-      <header className="flex flex-col gap-4 rounded-2xl border border-stone-200 bg-white p-6 shadow-sm sm:flex-row sm:items-start sm:justify-between">
+      <header className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:flex-row sm:items-start sm:justify-between">
         <div className="space-y-1">
-          <h1 className="text-2xl font-bold tracking-tight text-stone-900">Equipe</h1>
-          <p className="text-sm text-stone-500">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Equipe</h1>
+          <p className="text-sm text-slate-500">
             {counts.active} membro{counts.active === 1 ? "" : "s"} ativo
             {counts.active === 1 ? "" : "s"}
             {counts.pending > 0 && (
@@ -101,13 +106,13 @@ export default async function TeamPage({
             )}
           </p>
         </div>
-        <InviteDialog />
+        {canInvite && <InviteDialog />}
       </header>
 
       <section className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <KpiCard
           icon={Users}
-          iconWrap="bg-teal-50 text-teal-700"
+          iconWrap="bg-primary/10 text-primary"
           value={counts.active}
           label="Ativos"
         />
@@ -125,22 +130,22 @@ export default async function TeamPage({
         />
         <KpiCard
           icon={ShieldCheck}
-          iconWrap="bg-stone-100 text-stone-700"
+          iconWrap="bg-slate-100 text-slate-700"
           value={counts.total}
           label="Total"
         />
       </section>
 
-      <section className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
+      <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
         <form action="/app/team" className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <label className="relative flex-1">
-            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-stone-400" />
+            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
             <input
               type="search"
               name="q"
               defaultValue={q}
               placeholder="Buscar por nome ou e-mail..."
-              className="h-11 w-full rounded-lg border border-stone-200 bg-stone-50/50 pl-10 pr-3 text-sm text-stone-700 placeholder:text-stone-400 focus:border-teal-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-700/15"
+              className="h-11 w-full rounded-lg border border-slate-200 bg-slate-50/50 pl-10 pr-3 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/15"
             />
           </label>
           <div className="flex flex-wrap gap-2">
@@ -148,20 +153,20 @@ export default async function TeamPage({
               type="button"
               disabled
               title="Filtro em breve"
-              className="inline-flex items-center gap-2 rounded-lg border border-stone-200 bg-white px-4 py-2.5 text-sm text-stone-600 hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-90"
+              className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-90"
             >
-              <SlidersHorizontal className="size-4 text-stone-500" />
+              <SlidersHorizontal className="size-4 text-slate-500" />
               Todos os cargos
-              <ChevronDown className="size-4 text-stone-400" />
+              <ChevronDown className="size-4 text-slate-400" />
             </button>
             <button
               type="button"
               disabled
               title="Filtro em breve"
-              className="inline-flex items-center gap-2 rounded-lg border border-stone-200 bg-white px-4 py-2.5 text-sm text-stone-600 hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-90"
+              className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-90"
             >
               Todos os status
-              <ChevronDown className="size-4 text-stone-400" />
+              <ChevronDown className="size-4 text-slate-400" />
             </button>
           </div>
         </form>
@@ -184,11 +189,11 @@ export default async function TeamPage({
       </section>
 
       {visible.length === 0 ? (
-        <section className="rounded-2xl border border-stone-200 bg-white p-10 text-center shadow-sm">
-          <h2 className="text-base font-medium text-stone-900">
+        <section className="rounded-2xl border border-slate-200 bg-white p-10 text-center shadow-sm">
+          <h2 className="text-base font-medium text-slate-900">
             {q ? "Nada encontrado." : "Nenhum membro ainda"}
           </h2>
-          <p className="mt-1 text-sm text-stone-500">
+          <p className="mt-1 text-sm text-slate-500">
             {q
               ? "Tente outra busca ou limpe o filtro."
               : "Convide colegas para começar a trabalhar juntos nos processos."}
@@ -197,7 +202,14 @@ export default async function TeamPage({
       ) : (
         <section className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {visible.map((m) => (
-            <MemberCard key={m.userId} member={m} isSelf={m.userId === session.userId} />
+            <MemberCard
+              key={m.userId}
+              member={m}
+              isSelf={m.userId === session.userId}
+              canChangeRole={canChangeRole}
+              canRemove={canRemove}
+              canResendInvite={canInvite}
+            />
           ))}
         </section>
       )}

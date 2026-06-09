@@ -4,6 +4,7 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 
 import { requireSession } from "@/lib/auth/session";
+import { denyIfMissing, requirePermission } from "@/lib/auth/permissions";
 import { getProcessForOrg } from "@/lib/data/processes";
 import {
   createTimelineEvent,
@@ -38,7 +39,7 @@ export async function addTimelineEntryAction(
   formData: FormData,
 ): Promise<TimelineFormState> {
   const session = await requireSession();
-  if (session.role === "client") return { error: "Sem permissão." };
+  const denied = denyIfMissing(session.role, "process:add_timeline"); if (denied) return denied;
 
   const proc = await getProcessForOrg(session.orgId, processId);
   if (!proc) return { error: "Processo não encontrado." };
@@ -68,7 +69,7 @@ export async function addTimelineEntryAction(
 
 export async function deleteTimelineEntryAction(eventId: string): Promise<void> {
   const session = await requireSession();
-  if (session.role !== "broker_admin") throw new Error("Sem permissão. Apenas administradores podem remover eventos.");
+  requirePermission(session.role, "process:delete_timeline");
 
   const event = await getTimelineEventForOrg(session.orgId, eventId);
   if (!event) throw new Error("Evento não encontrado.");

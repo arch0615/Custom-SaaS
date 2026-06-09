@@ -4,6 +4,7 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 
 import { requireSession } from "@/lib/auth/session";
+import { denyIfMissing, requirePermission } from "@/lib/auth/permissions";
 import {
   countOrgAdmins,
   ensureUserAndMembership,
@@ -36,7 +37,7 @@ export async function inviteTeamMemberAction(
   formData: FormData,
 ): Promise<InviteState> {
   const session = await requireSession();
-  if (session.role !== "broker_admin") return { error: "Sem permissão." };
+  const denied = denyIfMissing(session.role, "team:invite"); if (denied) return denied;
 
   const parsed = inviteSchema.safeParse({
     email: (formData.get("email") as string | null)?.toLowerCase().trim(),
@@ -56,7 +57,7 @@ export async function inviteTeamMemberAction(
     subject: `Você foi convidado para ${session.orgName}`,
     text: `Olá, ${name}.
 
-Você foi convidado para acessar ${session.orgName} no Aduanasync.
+Você foi convidado para acessar ${session.orgName} no AduanaSync.
 
 Aceite o convite e defina sua senha em: ${inviteUrl}
 
@@ -71,7 +72,7 @@ const roleSchema = z.enum(["broker_admin", "broker_staff"]);
 
 export async function changeMemberRoleAction(userId: string, formData: FormData): Promise<void> {
   const session = await requireSession();
-  if (session.role !== "broker_admin") throw new Error("Sem permissão.");
+  requirePermission(session.role, "team:change_role");
   if (userId === session.userId) throw new Error("Você não pode alterar seu próprio papel.");
 
   const role = roleSchema.parse(formData.get("role"));
@@ -89,7 +90,7 @@ export async function changeMemberRoleAction(userId: string, formData: FormData)
 
 export async function removeMemberAction(userId: string): Promise<void> {
   const session = await requireSession();
-  if (session.role !== "broker_admin") throw new Error("Sem permissão.");
+  requirePermission(session.role, "team:remove");
   if (userId === session.userId) throw new Error("Você não pode se remover.");
 
   const current = await getOrgMember(session.orgId, userId);
@@ -106,7 +107,7 @@ export async function removeMemberAction(userId: string): Promise<void> {
 
 export async function resendInviteAction(email: string): Promise<{ inviteUrl: string }> {
   const session = await requireSession();
-  if (session.role !== "broker_admin") throw new Error("Sem permissão.");
+  requirePermission(session.role, "team:invite");
 
   const { token } = await createInviteToken(email);
   const inviteUrl = `${inviteOrigin()}/invite/${token}`;

@@ -5,13 +5,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import {
   Dialog,
   DialogContent,
@@ -20,7 +14,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { STAGE_LABEL, STAGE_OPTIONS, isStageJump } from "@/lib/process-status";
+import { STAGE_LABEL, STAGE_OPTIONS_GROUPED, isStageJump } from "@/lib/process-status";
 import type { ProcessStage } from "@/lib/data/processes";
 import { advanceStageAction } from "./actions";
 
@@ -40,22 +34,17 @@ export function StageSelector({
 
   return (
     <>
-      <Select
+      <SearchableSelect
         value={currentStage}
         onValueChange={(v) => {
           const next = v as ProcessStage;
           if (next !== currentStage) setTarget(next);
         }}
-      >
-        <SelectTrigger className="w-[260px]">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {STAGE_OPTIONS.map((o) => (
-            <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+        groups={STAGE_OPTIONS_GROUPED}
+        placeholder="Selecione uma etapa"
+        searchPlaceholder="Buscar etapa..."
+        className="w-[260px]"
+      />
 
       <Dialog open={open} onOpenChange={(v) => !v && setTarget(null)}>
         <DialogContent>

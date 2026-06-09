@@ -21,7 +21,7 @@ export function SidebarNav({
   const pathname = usePathname();
 
   return (
-    <nav className="flex flex-col gap-1 px-3 py-3">
+    <nav className="flex flex-col gap-0.5 px-2 py-3">
       {items.map((item) => {
         const active = isActive(pathname, item.href);
         return (
@@ -32,21 +32,15 @@ export function SidebarNav({
             className={cn(
               "group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
               active
-                ? "bg-teal-50 text-teal-700"
-                : "text-stone-600 hover:bg-stone-100 hover:text-stone-900",
+                ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                : "text-sidebar-muted hover:bg-sidebar-accent/40 hover:text-sidebar-foreground",
             )}
           >
-            {active && (
-              <span
-                aria-hidden
-                className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-r bg-teal-700"
-              />
-            )}
             <NavIcon
               name={item.icon}
               className={cn(
                 "size-4 shrink-0",
-                active ? "text-teal-700" : "text-stone-500 group-hover:text-stone-700",
+                active ? "text-sidebar-accent-foreground" : "text-sidebar-muted group-hover:text-sidebar-foreground",
               )}
             />
             <span className="truncate">{item.label}</span>

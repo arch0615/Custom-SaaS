@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 
 import { requireSession } from "@/lib/auth/session";
+import { denyIfMissing, requirePermission } from "@/lib/auth/permissions";
 import { parseProcessForm } from "@/lib/validation/process";
 import {
   getProcessByReference,
@@ -49,7 +50,7 @@ export async function updateProcessAction(
   formData: FormData,
 ): Promise<ProcessFormState> {
   const session = await requireSession();
-  if (session.role === "client") return { error: "Sem permissão." };
+  const denied = denyIfMissing(session.role, "process:edit"); if (denied) return denied;
 
   const existing = await getProcessForOrg(session.orgId, id);
   if (!existing) return { error: "Processo não encontrado." };
@@ -70,7 +71,12 @@ export async function updateProcessAction(
     }
   }
 
-  await updateProcessForOrg(session.orgId, id, data);
+  const containerNumber =
+    data.containers.length > 0 && data.containers[0].number
+      ? data.containers[0].number
+      : data.containerNumber;
+
+  await updateProcessForOrg(session.orgId, id, { ...data, containerNumber });
 
   revalidatePath("/app/processes");
   revalidatePath(`/app/processes/${id}`);
@@ -79,7 +85,7 @@ export async function updateProcessAction(
 
 export async function advanceStageAction(id: string, formData: FormData) {
   const session = await requireSession();
-  if (session.role === "client") throw new Error("Sem permissão.");
+  requirePermission(session.role, "process:advance_stage");
 
   const parsedStage = stageSchema.safeParse(formData.get("stage"));
   if (!parsedStage.success) throw new Error("Etapa inválida.");
@@ -128,7 +134,7 @@ export async function advanceStageAction(id: string, formData: FormData) {
 
 export async function deleteProcessAction(id: string) {
   const session = await requireSession();
-  if (session.role === "client") throw new Error("Sem permissão.");
+  requirePermission(session.role, "process:delete");
 
   await softDeleteProcessForOrg(session.orgId, id);
 

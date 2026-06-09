@@ -36,8 +36,8 @@ function FieldError({ msg }: { msg?: string }) {
 function ProviderBadge({ provider }: { provider: TrackingProvider }) {
   const tone =
     provider === "manual"
-      ? "bg-stone-100 text-stone-700 ring-1 ring-stone-200"
-      : "bg-teal-50 text-teal-700 ring-1 ring-teal-100";
+      ? "bg-slate-100 text-slate-700 ring-1 ring-slate-200"
+      : "bg-primary/10 text-primary ring-1 ring-primary/20";
   return (
     <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${tone}`}>
       {TRACKING_PROVIDER_LABEL[provider]}
@@ -72,14 +72,14 @@ export function TrackingView({
 
   return (
     <div className="space-y-5">
-      <section className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
+      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <header className="mb-4 flex items-start gap-3">
-          <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg bg-teal-50 text-teal-700">
+          <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
             <Radio className="size-4" />
           </span>
           <div>
-            <h2 className="text-sm font-semibold text-stone-900">Adicionar rastreamento</h2>
-            <p className="text-xs text-stone-500">
+            <h2 className="text-sm font-semibold text-slate-900">Adicionar rastreamento</h2>
+            <p className="text-xs text-slate-500">
               Conecte container, BL, AWB ou booking a um provedor. Use <strong>Manual</strong> para
               simular eventos sem provedor externo (útil para demos).
             </p>
@@ -87,14 +87,14 @@ export function TrackingView({
         </header>
         <form ref={formRef} action={formAction} className="grid grid-cols-1 gap-3 sm:grid-cols-12">
           <div className="sm:col-span-3">
-            <label htmlFor={providerId} className="mb-1.5 block text-xs font-medium text-stone-700">
+            <label htmlFor={providerId} className="mb-1.5 block text-xs font-medium text-slate-700">
               Provedor
             </label>
             <select
               id={providerId}
               name="provider"
               defaultValue="manual"
-              className="h-11 w-full rounded-lg border border-stone-200 bg-stone-50/50 px-3 text-sm text-stone-700 focus:border-teal-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-700/15"
+              className="h-11 w-full rounded-lg border border-slate-200 bg-slate-50/50 px-3 text-sm text-slate-700 focus:border-primary focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/15"
             >
               {PROVIDER_OPTIONS.map((p) => (
                 <option key={p} value={p}>
@@ -104,14 +104,14 @@ export function TrackingView({
             </select>
           </div>
           <div className="sm:col-span-3">
-            <label htmlFor={kindId} className="mb-1.5 block text-xs font-medium text-stone-700">
+            <label htmlFor={kindId} className="mb-1.5 block text-xs font-medium text-slate-700">
               Tipo
             </label>
             <select
               id={kindId}
               name="refKind"
               defaultValue="container"
-              className="h-11 w-full rounded-lg border border-stone-200 bg-stone-50/50 px-3 text-sm text-stone-700 focus:border-teal-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-700/15"
+              className="h-11 w-full rounded-lg border border-slate-200 bg-slate-50/50 px-3 text-sm text-slate-700 focus:border-primary focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/15"
             >
               {REF_KIND_OPTIONS.map((k) => (
                 <option key={k} value={k}>
@@ -121,14 +121,14 @@ export function TrackingView({
             </select>
           </div>
           <div className="sm:col-span-4">
-            <label htmlFor={refId} className="mb-1.5 block text-xs font-medium text-stone-700">
+            <label htmlFor={refId} className="mb-1.5 block text-xs font-medium text-slate-700">
               Identificador
             </label>
             <input
               id={refId}
               name="externalRef"
               placeholder="MSCU1234567"
-              className="h-11 w-full rounded-lg border border-stone-200 bg-stone-50/50 px-3 font-mono text-sm uppercase text-stone-700 placeholder:text-stone-400 focus:border-teal-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-700/15"
+              className="h-11 w-full rounded-lg border border-slate-200 bg-slate-50/50 px-3 font-mono text-sm uppercase text-slate-700 placeholder:text-slate-400 focus:border-primary focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/15"
             />
             <FieldError msg={state.fieldErrors?.externalRef?.[0]} />
           </div>
@@ -136,7 +136,7 @@ export function TrackingView({
             <button
               type="submit"
               disabled={addPending}
-              className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-teal-700 px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-teal-800 disabled:opacity-60"
+              className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary/90 disabled:opacity-60"
             >
               <Plus className="size-4" />
               Adicionar
@@ -146,31 +146,31 @@ export function TrackingView({
         {state.error && <p className="mt-3 text-sm text-red-600">{state.error}</p>}
       </section>
 
-      <section className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm">
-        <header className="border-b border-stone-200 px-6 py-4">
-          <h2 className="text-sm font-semibold text-stone-900">Rastreamentos ativos</h2>
-          <p className="text-xs text-stone-500">
+      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <header className="border-b border-slate-200 px-6 py-4">
+          <h2 className="text-sm font-semibold text-slate-900">Rastreamentos ativos</h2>
+          <p className="text-xs text-slate-500">
             Eventos chegam por webhook em <code className="font-mono text-[11px]">/api/webhooks/tracking</code>{" "}
             e aparecem automaticamente na Timeline.
           </p>
         </header>
         {rows.length === 0 ? (
-          <div className="p-10 text-center text-sm text-stone-500">
+          <div className="p-10 text-center text-sm text-slate-500">
             Nenhum rastreamento configurado ainda.
           </div>
         ) : (
-          <ul className="divide-y divide-stone-100">
+          <ul className="divide-y divide-slate-100">
             {rows.map((row) => (
               <li key={row.id} className="flex items-center justify-between gap-4 px-6 py-4">
                 <div className="min-w-0 flex-1 space-y-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-mono text-sm font-semibold text-stone-900">{row.externalRef}</span>
-                    <span className="rounded-full bg-stone-100 px-2 py-0.5 text-[11px] font-medium text-stone-600">
+                    <span className="font-mono text-sm font-semibold text-slate-900">{row.externalRef}</span>
+                    <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600">
                       {TRACKING_REF_KIND_LABEL[row.refKind]}
                     </span>
                     <ProviderBadge provider={row.provider} />
                   </div>
-                  <p className="text-xs text-stone-500">
+                  <p className="text-xs text-slate-500">
                     {row.lastEventAt
                       ? `Último evento: ${dateFmt.format(row.lastEventAt)}`
                       : "Aguardando primeiro evento."}
@@ -196,7 +196,7 @@ export function TrackingView({
                     });
                   }}
                   aria-label="Remover rastreamento"
-                  className="inline-flex size-8 shrink-0 items-center justify-center rounded-md text-stone-500 hover:bg-red-50 hover:text-red-600"
+                  className="inline-flex size-8 shrink-0 items-center justify-center rounded-md text-slate-500 hover:bg-red-50 hover:text-red-600"
                 >
                   <Trash2 className="size-4" />
                 </button>

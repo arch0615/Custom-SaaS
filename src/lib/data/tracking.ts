@@ -49,6 +49,7 @@ export async function createTrackingSubscription(input: {
   provider: TrackingProvider;
   refKind: TrackingRefKind;
   externalRef: string;
+  providerSubscriptionId?: string | null;
 }) {
   const [row] = await db
     .insert(trackingSubscriptions)
@@ -64,6 +65,10 @@ export async function deleteTrackingSubscription(orgId: string, id: string) {
     .where(
       and(eq(trackingSubscriptions.orgId, orgId), eq(trackingSubscriptions.id, id)),
     )
-    .returning({ id: trackingSubscriptions.id });
+    .returning({
+      id: trackingSubscriptions.id,
+      provider: trackingSubscriptions.provider,
+      providerSubscriptionId: trackingSubscriptions.providerSubscriptionId,
+    });
   return row ?? null;
 }

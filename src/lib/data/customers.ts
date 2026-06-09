@@ -101,11 +101,22 @@ export async function softDeleteCustomerForOrg(orgId: string, id: string) {
 }
 
 export async function getCustomerForClientUser(orgId: string, userId: string) {
-  const [row] = await db
+  const rows = await listCustomersForClientUser(orgId, userId);
+  return rows[0] ?? null;
+}
+
+/**
+ * All customers a client user has access to in this org. A single login can be
+ * linked to multiple empresas (CNPJs) when they belong to the same group —
+ * we add a customer_contacts row per company sharing the same user_id.
+ */
+export async function listCustomersForClientUser(orgId: string, userId: string) {
+  return db
     .select({
       customerId: customers.id,
       legalName: customers.legalName,
       tradeName: customers.tradeName,
+      cnpj: customers.cnpj,
       contactId: customerContacts.id,
     })
     .from(customerContacts)
@@ -116,9 +127,7 @@ export async function getCustomerForClientUser(orgId: string, userId: string) {
         eq(customerContacts.userId, userId),
         isNull(customers.deletedAt),
       ),
-    )
-    .limit(1);
-  return row ?? null;
+    );
 }
 
 export type CustomerListWithStats = CustomerListRow & {

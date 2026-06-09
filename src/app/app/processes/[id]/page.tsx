@@ -3,11 +3,13 @@ import { notFound } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
 
 import { requireSession } from "@/lib/auth/session";
+import { hasPermission } from "@/lib/auth/permissions";
 import { getProcessForOrg } from "@/lib/data/processes";
 import { listCustomersForOrg, getCustomerForOrg } from "@/lib/data/customers";
 import { listTimelineForProcess } from "@/lib/data/timeline";
 import { listDocumentsForProcess } from "@/lib/data/documents";
 import { listTrackingForProcess } from "@/lib/data/tracking";
+import { getOrgAccessState } from "@/lib/data/admin-orgs";
 import { MODAL_LABEL, isDelayed, stageBadgeVariant, STAGE_LABEL } from "@/lib/process-status";
 
 import { Badge } from "@/components/ui/badge";
@@ -44,17 +46,23 @@ export default async function ProcessDetailPage({ params }: { params: Promise<{ 
   const proc = await getProcessForOrg(session.orgId, id);
   if (!proc) notFound();
 
-  const [customer, customers, events, documents, tracking] = await Promise.all([
+  const [customer, customers, events, documents, tracking, access] = await Promise.all([
     getCustomerForOrg(session.orgId, proc.customerId),
     listCustomersForOrg(session.orgId),
     listTimelineForProcess(session.orgId, proc.id),
     listDocumentsForProcess(session.orgId, proc.id),
     listTrackingForProcess(session.orgId, proc.id),
+    getOrgAccessState(session.orgId),
   ]);
 
   const delayed = isDelayed(proc.stage, proc.arrivalDate);
-  const canWriteTimeline = session.role !== "client";
-  const canDeleteEvents = session.role === "broker_admin";
+  const canWriteTimeline = hasPermission(session.role, "process:add_timeline");
+  const canUploadDocs = hasPermission(session.role, "document:upload");
+  const canEdit = hasPermission(session.role, "process:edit");
+  const canDelete = hasPermission(session.role, "process:delete");
+  const canManageTracking = hasPermission(session.role, "tracking:manage");
+  const trackingEnabled = !!access?.features.tracking_auto;
+  const canDeleteEvents = hasPermission(session.role, "process:delete_timeline");
 
   return (
     <div className="mx-auto w-full space-y-6 px-6 py-4">
@@ -92,7 +100,7 @@ export default async function ProcessDetailPage({ params }: { params: Promise<{ 
         </div>
         <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:gap-3">
           <StageSelector processId={proc.id} currentStage={proc.stage} />
-          {!proc.deletedAt && <DeleteProcessButton id={proc.id} reference={proc.reference} />}
+          {!proc.deletedAt && canDelete && <DeleteProcessButton id={proc.id} reference={proc.reference} />}
         </div>
       </header>
 
@@ -109,7 +117,7 @@ export default async function ProcessDetailPage({ params }: { params: Promise<{ 
               <span className="ml-1 text-xs text-muted-foreground">{documents.length}</span>
             )}
           </TabsTrigger>
-          {canWriteTimeline && (
+          {canManageTracking && trackingEnabled && (
             <TabsTrigger value="tracking">
               Rastreamento
               {tracking.length > 0 && (
@@ -117,13 +125,14 @@ export default async function ProcessDetailPage({ params }: { params: Promise<{ 
               )}
             </TabsTrigger>
           )}
-          <TabsTrigger value="edit">Editar</TabsTrigger>
+          {canEdit && <TabsTrigger value="edit">Editar</TabsTrigger>}
         </TabsList>
 
         <TabsContent value="overview" className="mt-6 space-y-4">
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             <OverviewCard title="Partes envolvidas">
               <Row label="Importador">{proc.importerName}</Row>
+              <Row label="Notify">{proc.notifyParty ?? "—"}</Row>
               <Row label="Exportador">{proc.exporterName}</Row>
               <Row label={proc.modal === "air" ? "Cia aérea" : "Armador"}>{proc.carrier ?? "—"}</Row>
               <Row label={proc.modal === "air" ? "Voo" : "Navio"}>{proc.vesselFlight ?? "—"}</Row>
@@ -132,6 +141,7 @@ export default async function ProcessDetailPage({ params }: { params: Promise<{ 
               <Row label="Origem">{proc.origin}</Row>
               <Row label="Destino">{proc.destination}</Row>
               <Row label={proc.modal === "air" ? "Aeroporto de conexão" : "Porto de transbordo"}>{proc.transshipmentPort ?? "—"}</Row>
+              <Row label={proc.modal === "air" ? "Voo de transbordo" : "Navio de transbordo"}>{proc.transshipmentVessel ?? "—"}</Row>
               <Row label="Chegada/Saída no transbordo">
                 {dateOnly(proc.transshipmentArrival)} · {dateOnly(proc.transshipmentDeparture)}
               </Row>
@@ -143,9 +153,10 @@ export default async function ProcessDetailPage({ params }: { params: Promise<{ 
             <OverviewCard title="Numerações">
               <Row label={proc.modal === "air" ? "HAWB" : "HBL"}>{proc.hblNumber ?? "—"}</Row>
               <Row label={proc.modal === "air" ? "MAWB" : "MBL"}>{proc.mblNumber ?? "—"}</Row>
-              <Row label={proc.modal === "air" ? "ULD" : "Container"} mono>
-                {proc.containerNumber ?? "—"}
+              <Row label={proc.modal === "air" ? "ULD" : "Containers"} mono>
+                <ContainersInline list={proc.containers} fallback={proc.containerNumber} />
               </Row>
+              <Row label="Número da Invoice">{proc.invoiceNumber ?? "—"}</Row>
               <Row label="DI / DUE">{proc.diNumber ?? "—"}</Row>
               <Row label="CE Master">{proc.ceMaster ?? "—"}</Row>
               <Row label="CE House">{proc.ceHouse ?? "—"}</Row>
@@ -162,6 +173,14 @@ export default async function ProcessDetailPage({ params }: { params: Promise<{ 
               </Row>
               <Row label="Peso bruto">{proc.grossWeightKg ? `${proc.grossWeightKg} kg` : "—"}</Row>
               <Row label="NCM">{proc.ncm ?? "—"}</Row>
+              <Row label="Free Time">{proc.freeTime ?? "—"}</Row>
+              <Row label="Seguro">
+                {proc.insurance === "solicitado"
+                  ? "Solicitado"
+                  : proc.insurance === "nao_solicitado"
+                    ? "Não solicitado"
+                    : "—"}
+              </Row>
             </OverviewCard>
           </div>
         </TabsContent>
@@ -176,30 +195,32 @@ export default async function ProcessDetailPage({ params }: { params: Promise<{ 
         </TabsContent>
 
         <TabsContent value="documents" className="mt-6 space-y-4">
-          {canWriteTimeline && (
+          {canUploadDocs && (
             <div className="flex justify-end">
               <UploadDocument processId={proc.id} />
             </div>
           )}
-          <DocumentsView processId={proc.id} rows={documents} canWrite={canWriteTimeline} />
+          <DocumentsView processId={proc.id} rows={documents} canWrite={canUploadDocs} />
         </TabsContent>
 
-        {canWriteTimeline && (
+        {canManageTracking && trackingEnabled && (
           <TabsContent value="tracking" className="mt-6">
             <TrackingView processId={proc.id} rows={tracking} />
           </TabsContent>
         )}
 
-        <TabsContent value="edit" className="mt-6">
-          <ProcessEditTab
-            process={{
-              ...proc,
-              invoiceValue: proc.invoiceValue,
-              grossWeightKg: proc.grossWeightKg,
-            }}
-            customers={customers.map((c) => ({ id: c.id, legalName: c.legalName }))}
-          />
-        </TabsContent>
+        {canEdit && (
+          <TabsContent value="edit" className="mt-6">
+            <ProcessEditTab
+              process={{
+                ...proc,
+                invoiceValue: proc.invoiceValue,
+                grossWeightKg: proc.grossWeightKg,
+              }}
+              customers={customers.map((c) => ({ id: c.id, legalName: c.legalName }))}
+            />
+          </TabsContent>
+        )}
       </Tabs>
 
       {canWriteTimeline && <AddTimelineEntry processId={proc.id} variant="fab" />}
@@ -215,6 +236,30 @@ function OverviewCard({ title, children }: { title: string; children: React.Reac
       </CardHeader>
       <CardContent className="space-y-2">{children}</CardContent>
     </Card>
+  );
+}
+
+function ContainersInline({
+  list,
+  fallback,
+}: {
+  list: { number: string | null; type: string | null; quantity: number }[] | null | undefined;
+  fallback: string | null;
+}) {
+  const filtered = (list ?? []).filter((c) => c.number || c.type);
+  if (filtered.length === 0) {
+    return <>{fallback ?? "—"}</>;
+  }
+  return (
+    <span className="flex flex-col items-end gap-0.5">
+      {filtered.map((c, i) => (
+        <span key={i}>
+          {c.number ?? "—"}
+          {c.type ? <span className="ml-1 text-xs text-muted-foreground">· {c.type}</span> : null}
+          {c.quantity > 1 ? <span className="ml-1 text-xs text-muted-foreground">× {c.quantity}</span> : null}
+        </span>
+      ))}
+    </span>
   );
 }
 

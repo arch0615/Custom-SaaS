@@ -5,6 +5,7 @@ import { and, eq, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 import { requireSession } from "@/lib/auth/session";
+import { denyIfMissing } from "@/lib/auth/permissions";
 import { db } from "@/db/client";
 import { organizations } from "@/db/schema/organizations";
 import { users } from "@/db/schema/auth";
@@ -45,7 +46,7 @@ export async function updateOrgProfileAction(
   formData: FormData,
 ): Promise<ProfileState> {
   const session = await requireSession();
-  if (session.role !== "broker_admin") return { error: "Sem permissão." };
+  const denied = denyIfMissing(session.role, "settings:org_profile"); if (denied) return denied;
 
   const parsed = profileSchema.safeParse({
     name: formData.get("name"),

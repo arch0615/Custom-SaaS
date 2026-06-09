@@ -26,6 +26,8 @@ export const trackingSubscriptions = pgTable(
     provider: trackingProvider("provider").notNull(),
     refKind: trackingRefKind("ref_kind").notNull(),
     externalRef: text("external_ref").notNull(),
+    /** ID this subscription has on the provider's side (e.g. SeaRates tracking_id). */
+    providerSubscriptionId: text("provider_subscription_id"),
     lastPolledAt: timestamp("last_polled_at", { withTimezone: true }),
     lastEventAt: timestamp("last_event_at", { withTimezone: true }),
     disabled: text("disabled"),

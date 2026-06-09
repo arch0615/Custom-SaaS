@@ -11,6 +11,7 @@ import { MODAL_LABEL, STAGE_LABEL, isDelayed, stageBadgeVariant } from "@/lib/pr
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StageProgress } from "@/components/portal/stage-progress";
+import { GroupProgress } from "@/components/processes/group-progress";
 import { TimelineView } from "@/components/processes/timeline-view";
 import { DocumentsView } from "@/components/processes/documents-view";
 import { RequestUpdateButton } from "./request-update-button";
@@ -37,10 +38,10 @@ export default async function PortalProcessPage({
 }) {
   const { id } = await params;
   const { impersonate } = await searchParams;
-  const { session, customer, impersonating } = await requirePortalCustomer(impersonate);
+  const { session, customerIds, primary, impersonating } = await requirePortalCustomer(impersonate);
 
   const proc = await getProcessForOrg(session.orgId, id);
-  if (!proc || proc.customerId !== customer.id || proc.deletedAt) notFound();
+  if (!proc || !customerIds.includes(proc.customerId) || proc.deletedAt) notFound();
 
   const [events, documents] = await Promise.all([
     listTimelineForProcess(session.orgId, proc.id),
@@ -48,7 +49,7 @@ export default async function PortalProcessPage({
   ]);
 
   const delayed = isDelayed(proc.stage, proc.arrivalDate);
-  const portalBack = impersonating ? `/portal?impersonate=${customer.id}` : "/portal";
+  const portalBack = impersonating ? `/portal?impersonate=${primary.id}` : "/portal";
 
   return (
     <div className="mx-auto w-full space-y-6 px-6 py-4">
@@ -80,7 +81,8 @@ export default async function PortalProcessPage({
         <CardHeader>
           <CardTitle className="text-base">Andamento</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-5">
+          <GroupProgress stage={proc.stage} />
           <StageProgress current={proc.stage} />
         </CardContent>
       </Card>
@@ -91,7 +93,7 @@ export default async function PortalProcessPage({
         </p>
         <RequestUpdateButton
           processId={proc.id}
-          impersonateId={impersonating ? customer.id : undefined}
+          impersonateId={impersonating ? primary.id : undefined}
           disabled={impersonating}
         />
       </div>
@@ -101,12 +103,38 @@ export default async function PortalProcessPage({
           <CardTitle className="text-base">Resumo</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
+          <Field label="Importador" value={proc.importerName} />
+          <Field label="Notify" value={proc.notifyParty} />
           <Field label={proc.modal === "air" ? "Cia aérea" : "Armador"} value={proc.carrier} />
           <Field label={proc.modal === "air" ? "Voo" : "Navio"} value={proc.vesselFlight} />
+          <Field
+            label={proc.modal === "air" ? "Aeroporto de conexão" : "Porto de transbordo"}
+            value={proc.transshipmentPort}
+          />
+          <Field
+            label={proc.modal === "air" ? "Voo de transbordo" : "Navio de transbordo"}
+            value={proc.transshipmentVessel}
+          />
           <Field label={proc.modal === "air" ? "HAWB" : "HBL"} value={proc.hblNumber} />
           <Field label={proc.modal === "air" ? "MAWB" : "MBL"} value={proc.mblNumber} />
-          <Field label={proc.modal === "air" ? "ULD" : "Container"} value={proc.containerNumber} mono />
+          <PortalContainers
+            label={proc.modal === "air" ? "ULDs" : "Containers"}
+            list={proc.containers as { number: string | null; type: string | null; quantity: number }[] | null | undefined}
+            fallback={proc.containerNumber}
+          />
+          <Field label="Número da Invoice" value={proc.invoiceNumber} />
           <Field label="Embarque" value={dateOnly(proc.shipmentDate)} />
+          <Field label="Free Time" value={proc.freeTime} />
+          <Field
+            label="Seguro"
+            value={
+              proc.insurance === "solicitado"
+                ? "Solicitado"
+                : proc.insurance === "nao_solicitado"
+                  ? "Não solicitado"
+                  : null
+            }
+          />
         </CardContent>
       </Card>
 
@@ -134,7 +162,7 @@ export default async function PortalProcessPage({
           </CardTitle>
           <ClientUploadDocument
             processId={proc.id}
-            impersonateId={impersonating ? customer.id : undefined}
+            impersonateId={impersonating ? primary.id : undefined}
             disabled={impersonating}
           />
         </CardHeader>
@@ -151,6 +179,35 @@ function Field({ label, value, mono }: { label: string; value: string | null; mo
     <div className="flex items-start justify-between gap-3">
       <span className="text-muted-foreground">{label}</span>
       <span className={mono ? "font-mono" : "font-medium"}>{value || "—"}</span>
+    </div>
+  );
+}
+
+function PortalContainers({
+  label,
+  list,
+  fallback,
+}: {
+  label: string;
+  list: { number: string | null; type: string | null; quantity: number }[] | null | undefined;
+  fallback: string | null;
+}) {
+  const filtered = (list ?? []).filter((c) => c.number || c.type);
+  if (filtered.length === 0) {
+    return <Field label={label} value={fallback} mono />;
+  }
+  return (
+    <div className="flex items-start justify-between gap-3">
+      <span className="text-muted-foreground">{label}</span>
+      <span className="flex flex-col items-end gap-0.5 font-mono text-right">
+        {filtered.map((c, i) => (
+          <span key={i}>
+            {c.number ?? "—"}
+            {c.type && <span className="ml-1 text-xs text-muted-foreground">· {c.type}</span>}
+            {c.quantity > 1 && <span className="ml-1 text-xs text-muted-foreground">× {c.quantity}</span>}
+          </span>
+        ))}
+      </span>
     </div>
   );
 }

@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+  <defs>
+    <clipPath id="leftHalf"><rect x="0" y="0" width="32" height="64"/></clipPath>
+    <clipPath id="rightHalf"><rect x="32" y="0" width="32" height="64"/></clipPath>
+  </defs>
+  <!-- A silhouette: outer triangle minus inner triangle -->
+  <g>
+    <!-- Left half of A (bright blue) -->
+    <path d="M32 6 L8 58 L18 58 L32 26 Z M32 26 L24 42 L32 42 Z" fill="#0F5BFF" clipPath="url(#leftHalf)"/>
+    <!-- Right half of A (navy) -->
+    <path d="M32 6 L56 58 L46 58 L32 26 Z M32 26 L40 42 L32 42 Z" fill="#071B46" clipPath="url(#rightHalf)"/>
+    <!-- Swoosh ribbon crossing the A (color swap halves) -->
+    <path d="M14 38 Q 24 30 32 38 L 30 44 Q 24 38 18 44 Z" fill="#071B46"/>
+    <path d="M32 38 Q 40 46 50 38 L 48 44 Q 40 50 30 44 Z" fill="#0F5BFF"/>
+  </g>
+</svg>

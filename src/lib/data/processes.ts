@@ -1,16 +1,19 @@
-import { and, desc, eq, isNull, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { db } from "@/db/client";
 import {
   processes,
   type processStage as ProcessStageEnum,
   type processModal as ProcessModalEnum,
   type incoterm as IncotermEnum,
+  type ContainerEntry,
 } from "@/db/schema/processes";
 import { customers } from "@/db/schema/customers";
 
 export type ProcessStage = (typeof ProcessStageEnum.enumValues)[number];
 export type ProcessModal = (typeof ProcessModalEnum.enumValues)[number];
 export type Incoterm = (typeof IncotermEnum.enumValues)[number];
+export type { ContainerEntry, ContainerType } from "@/db/schema/processes";
+export { CONTAINER_TYPES } from "@/db/schema/processes";
 
 export type ProcessRow = typeof processes.$inferSelect;
 export type NewProcessRow = typeof processes.$inferInsert;
@@ -33,15 +36,21 @@ export type ProcessListRow = {
   shipmentDate: string | null;
   arrivalDate: string | null;
   containerNumber: string | null;
+  containers: ContainerEntry[] | null;
+  invoiceNumber: string | null;
   createdAt: Date;
 };
 
 export async function listProcessesForOrg(
   orgId: string,
-  opts: { customerId?: string } = {},
+  opts: { customerId?: string; customerIds?: string[] } = {},
 ): Promise<ProcessListRow[]> {
   const wheres = [eq(processes.orgId, orgId), isNull(processes.deletedAt)];
-  if (opts.customerId) wheres.push(eq(processes.customerId, opts.customerId));
+  if (opts.customerId) {
+    wheres.push(eq(processes.customerId, opts.customerId));
+  } else if (opts.customerIds && opts.customerIds.length > 0) {
+    wheres.push(inArray(processes.customerId, opts.customerIds));
+  }
 
   return db
     .select({
@@ -60,12 +69,15 @@ export async function listProcessesForOrg(
       shipmentDate: processes.shipmentDate,
       arrivalDate: processes.arrivalDate,
       containerNumber: processes.containerNumber,
+      containers: processes.containers,
+      invoiceNumber: processes.invoiceNumber,
       createdAt: processes.createdAt,
     })
     .from(processes)
     .innerJoin(customers, eq(customers.id, processes.customerId))
     .where(and(...wheres))
-    .orderBy(desc(processes.createdAt));
+    // Order by Previsão de Chegada ASC (nulls last), tie-break by newest created.
+    .orderBy(sql`${processes.arrivalDate} ASC NULLS LAST`, desc(processes.createdAt));
 }
 
 export async function getProcessForOrg(orgId: string, id: string) {

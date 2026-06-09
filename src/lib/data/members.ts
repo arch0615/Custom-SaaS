@@ -3,7 +3,7 @@ import { db } from "@/db/client";
 import { users } from "@/db/schema/auth";
 import { orgMembers } from "@/db/schema/organizations";
 
-export type MemberRole = "broker_admin" | "broker_staff" | "client";
+export type MemberRole = "broker_admin" | "broker_staff" | "client" | "platform_admin";
 
 export type TeamMemberRow = {
   userId: string;

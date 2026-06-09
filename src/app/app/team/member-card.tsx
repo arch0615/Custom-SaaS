@@ -48,8 +48,8 @@ const ROLE_LABEL: Record<MemberCardData["role"], string> = {
 
 const ROLE_TONE: Record<MemberCardData["role"], { wrap: string; dot: string }> = {
   broker_admin: {
-    wrap: "bg-teal-50 text-teal-700 ring-1 ring-teal-100",
-    dot: "bg-teal-600",
+    wrap: "bg-primary/10 text-primary ring-1 ring-primary/20",
+    dot: "bg-primary",
   },
   broker_staff: {
     wrap: "bg-amber-50 text-amber-700 ring-1 ring-amber-100",
@@ -58,8 +58,8 @@ const ROLE_TONE: Record<MemberCardData["role"], { wrap: string; dot: string }> =
 };
 
 const AVATAR_PALETTE = [
-  "bg-teal-600",
-  "bg-teal-500",
+  "bg-primary",
+  "bg-primary/100",
   "bg-blue-600",
   "bg-red-500",
   "bg-orange-500",
@@ -67,7 +67,7 @@ const AVATAR_PALETTE = [
   "bg-indigo-500",
   "bg-purple-500",
   "bg-pink-500",
-  "bg-stone-500",
+  "bg-slate-500",
 ];
 
 function avatarBg(seed: string): string {
@@ -94,10 +94,17 @@ function formatJoinDate(d: Date): string {
 export function MemberCard({
   member,
   isSelf,
+  canChangeRole,
+  canRemove,
+  canResendInvite,
 }: {
   member: MemberCardData;
   isSelf: boolean;
+  canChangeRole: boolean;
+  canRemove: boolean;
+  canResendInvite: boolean;
 }) {
+  const showMenu = canChangeRole || canRemove || (canResendInvite && member.invited);
   const [pending, startTransition] = useTransition();
   const [removeOpen, setRemoveOpen] = useState(false);
   const [lastInviteUrl, setLastInviteUrl] = useState<string | null>(null);
@@ -105,7 +112,7 @@ export function MemberCard({
   const roleTone = ROLE_TONE[member.role];
 
   return (
-    <article className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
+    <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
       <div className="flex items-start gap-3">
         <span
           className={`inline-flex size-11 shrink-0 items-center justify-center rounded-lg ${avatarBg(member.userId)} text-sm font-semibold text-white`}
@@ -115,75 +122,83 @@ export function MemberCard({
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
-              <h3 className="truncate text-sm font-semibold text-stone-900">
+              <h3 className="truncate text-sm font-semibold text-slate-900">
                 {member.name ?? "—"}
-                {isSelf && <span className="ml-2 text-xs font-normal text-stone-400">(você)</span>}
+                {isSelf && <span className="ml-2 text-xs font-normal text-slate-400">(você)</span>}
               </h3>
-              <p className="mt-0.5 inline-flex items-center gap-1 text-xs text-stone-500">
+              <p className="mt-0.5 inline-flex items-center gap-1 text-xs text-slate-500">
                 <Mail className="size-3.5" />
                 <span className="truncate">{member.email}</span>
               </p>
             </div>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="size-7 shrink-0" aria-label="Ações">
-                  <MoreHorizontal className="size-4 text-stone-500" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuItem
-                  disabled={isSelf || pending}
-                  onSelect={(e) => {
-                    e.preventDefault();
-                    startTransition(async () => {
-                      const fd = new FormData();
-                      fd.set("role", otherRole);
-                      try {
-                        await changeMemberRoleAction(member.userId, fd);
-                        toast.success(`Papel alterado para ${ROLE_LABEL[otherRole]}.`);
-                      } catch (err) {
-                        toast.error(err instanceof Error ? err.message : "Falha ao alterar papel.");
-                      }
-                    });
-                  }}
-                >
-                  <ShieldCheck className="mr-2 size-4" />
-                  Tornar {ROLE_LABEL[otherRole]}
-                </DropdownMenuItem>
-                {member.invited && (
-                  <DropdownMenuItem
-                    disabled={pending}
-                    onSelect={(e) => {
-                      e.preventDefault();
-                      startTransition(async () => {
-                        try {
-                          const r = await resendInviteAction(member.email);
-                          setLastInviteUrl(r.inviteUrl);
-                          toast.success("Convite reenviado.");
-                        } catch (err) {
-                          toast.error(err instanceof Error ? err.message : "Falha ao reenviar.");
-                        }
-                      });
-                    }}
-                  >
-                    <RefreshCcw className="mr-2 size-4" />
-                    Reenviar convite
-                  </DropdownMenuItem>
-                )}
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  className="text-destructive focus:text-destructive"
-                  disabled={isSelf}
-                  onSelect={(e) => {
-                    e.preventDefault();
-                    setRemoveOpen(true);
-                  }}
-                >
-                  <Trash2 className="mr-2 size-4" />
-                  Remover do grupo
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            {showMenu && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="size-7 shrink-0" aria-label="Ações">
+                    <MoreHorizontal className="size-4 text-slate-500" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  {canChangeRole && (
+                    <DropdownMenuItem
+                      disabled={isSelf || pending}
+                      onSelect={(e) => {
+                        e.preventDefault();
+                        startTransition(async () => {
+                          const fd = new FormData();
+                          fd.set("role", otherRole);
+                          try {
+                            await changeMemberRoleAction(member.userId, fd);
+                            toast.success(`Papel alterado para ${ROLE_LABEL[otherRole]}.`);
+                          } catch (err) {
+                            toast.error(err instanceof Error ? err.message : "Falha ao alterar papel.");
+                          }
+                        });
+                      }}
+                    >
+                      <ShieldCheck className="mr-2 size-4" />
+                      Tornar {ROLE_LABEL[otherRole]}
+                    </DropdownMenuItem>
+                  )}
+                  {canResendInvite && member.invited && (
+                    <DropdownMenuItem
+                      disabled={pending}
+                      onSelect={(e) => {
+                        e.preventDefault();
+                        startTransition(async () => {
+                          try {
+                            const r = await resendInviteAction(member.email);
+                            setLastInviteUrl(r.inviteUrl);
+                            toast.success("Convite reenviado.");
+                          } catch (err) {
+                            toast.error(err instanceof Error ? err.message : "Falha ao reenviar.");
+                          }
+                        });
+                      }}
+                    >
+                      <RefreshCcw className="mr-2 size-4" />
+                      Reenviar convite
+                    </DropdownMenuItem>
+                  )}
+                  {canRemove && (
+                    <>
+                      {canChangeRole && <DropdownMenuSeparator />}
+                      <DropdownMenuItem
+                        className="text-destructive focus:text-destructive"
+                        disabled={isSelf}
+                        onSelect={(e) => {
+                          e.preventDefault();
+                          setRemoveOpen(true);
+                        }}
+                      >
+                        <Trash2 className="mr-2 size-4" />
+                        Remover do grupo
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </div>
           <div className="mt-2 flex flex-wrap items-center gap-1.5">
             <span
@@ -206,22 +221,22 @@ export function MemberCard({
         </div>
       </div>
 
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-y-2 border-t border-stone-100 pt-3 text-xs text-stone-500">
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-y-2 border-t border-slate-100 pt-3 text-xs text-slate-500">
         <span className="inline-flex items-center gap-3">
           <span className="inline-flex items-center gap-1">
-            <FolderOpen className="size-3.5 text-stone-400" />
+            <FolderOpen className="size-3.5 text-slate-400" />
             {member.processesTouched} processo{member.processesTouched === 1 ? "" : "s"}
           </span>
         </span>
         <span className="inline-flex items-center gap-1">
-          <Calendar className="size-3.5 text-stone-400" />
+          <Calendar className="size-3.5 text-slate-400" />
           Entrou em {formatJoinDate(member.joinedAt)}
         </span>
       </div>
 
       {lastInviteUrl && (
-        <div className="mt-3 flex items-center gap-2 rounded-lg border border-stone-200 bg-stone-50 px-3 py-2">
-          <code className="min-w-0 flex-1 truncate font-mono text-[11px] text-stone-600">
+        <div className="mt-3 flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+          <code className="min-w-0 flex-1 truncate font-mono text-[11px] text-slate-600">
             {lastInviteUrl}
           </code>
           <Button

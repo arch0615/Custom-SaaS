@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 
 import { requireSession } from "@/lib/auth/session";
+import { denyIfMissing, requirePermission } from "@/lib/auth/permissions";
 import { parseCustomerForm } from "@/lib/validation/customer";
 import {
   getCustomerByCnpj,
@@ -24,7 +25,7 @@ export async function updateCustomerAction(
   formData: FormData,
 ): Promise<CustomerFormState> {
   const session = await requireSession();
-  if (session.role === "client") return { error: "Sem permissão." };
+  const denied = denyIfMissing(session.role, "customer:edit"); if (denied) return denied;
 
   const existing = await getCustomerForOrg(session.orgId, id);
   if (!existing) return { error: "Cliente não encontrado." };
@@ -50,7 +51,7 @@ export async function updateCustomerAction(
 
 export async function deleteCustomerAction(id: string) {
   const session = await requireSession();
-  if (session.role === "client") throw new Error("Sem permissão.");
+  requirePermission(session.role, "customer:delete");
 
   await softDeleteCustomerForOrg(session.orgId, id);
 

@@ -199,6 +199,42 @@ export type RecentActivityRow = {
   occurredAt: Date;
 };
 
+export type FeaturedProcess = {
+  id: string;
+  reference: string;
+  customerName: string;
+  stage: ProcessStage;
+  shipmentDate: Date | null;
+  arrivalDate: Date | null;
+  updatedAt: Date;
+};
+
+export async function getFeaturedActiveProcess(orgId: string): Promise<FeaturedProcess | null> {
+  const result = await db.execute(sql`
+    SELECT
+      p.id, p.reference, p.stage, p.shipment_date, p.arrival_date, p.updated_at,
+      c.legal_name AS customer_name
+    FROM processes p
+    JOIN customers c ON c.id = p.customer_id
+    WHERE p.org_id = ${orgId}
+      AND p.deleted_at IS NULL
+      AND p.stage <> 'pago'
+    ORDER BY p.updated_at DESC
+    LIMIT 1
+  `);
+  const row = result.rows[0] as Record<string, unknown> | undefined;
+  if (!row) return null;
+  return {
+    id: row.id as string,
+    reference: row.reference as string,
+    customerName: row.customer_name as string,
+    stage: row.stage as ProcessStage,
+    shipmentDate: row.shipment_date ? new Date(row.shipment_date as string) : null,
+    arrivalDate: row.arrival_date ? new Date(row.arrival_date as string) : null,
+    updatedAt: new Date(row.updated_at as string),
+  };
+}
+
 export async function getRecentActivity(orgId: string, limit = 20): Promise<RecentActivityRow[]> {
   const result = await db.execute(sql`
     SELECT

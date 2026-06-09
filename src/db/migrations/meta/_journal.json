@@ -36,6 +36,48 @@
       "when": 1779217786839,
       "tag": "0004_expand_process_stages",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1779377199718,
+      "tag": "0005_powerful_iron_patriot",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1779890408817,
+      "tag": "0006_free_time_and_insurance",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1780317917882,
+      "tag": "0007_clammy_rattler",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1780317999000,
+      "tag": "0008_reintroduce_legacy_stages",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1780404999000,
+      "tag": "0009_status_workflow_v2",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1780405099000,
+      "tag": "0010_admin_area",
+      "breakpoints": true
     }
   ]
 }

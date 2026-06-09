@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 
 import { requireSession } from "@/lib/auth/session";
+import { denyIfMissing, requirePermission } from "@/lib/auth/permissions";
 import { parseCustomerForm } from "@/lib/validation/customer";
 import { createCustomerForOrg, getCustomerByCnpj } from "@/lib/data/customers";
 
@@ -18,7 +19,7 @@ export async function createCustomerAction(
   formData: FormData,
 ): Promise<CustomerFormState> {
   const session = await requireSession();
-  if (session.role === "client") return { error: "Sem permissão." };
+  const denied = denyIfMissing(session.role, "customer:create"); if (denied) return denied;
 
   const parsed = parseCustomerForm(formData);
   if (!parsed.success) {

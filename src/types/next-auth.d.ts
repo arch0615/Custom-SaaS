@@ -1,7 +1,7 @@
 import "next-auth";
 import "next-auth/jwt";
 
-type MemberRole = "broker_admin" | "broker_staff" | "client";
+type MemberRole = "broker_admin" | "broker_staff" | "client" | "platform_admin";
 
 declare module "next-auth" {
   interface User {

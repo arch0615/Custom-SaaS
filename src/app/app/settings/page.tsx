@@ -4,6 +4,7 @@ import { eq } from "drizzle-orm";
 import { Bell, Building2, ShieldCheck } from "lucide-react";
 
 import { requireSession } from "@/lib/auth/session";
+import { hasPermission } from "@/lib/auth/permissions";
 import { db } from "@/db/client";
 import { organizations } from "@/db/schema/organizations";
 import { getPreferencesForUser } from "@/lib/data/notifications";
@@ -36,7 +37,7 @@ export default async function SettingsPage({
   searchParams: Promise<{ tab?: string }>;
 }) {
   const session = await requireSession();
-  if (session.role !== "broker_admin") redirect("/app");
+  if (!hasPermission(session.role, "settings:org_profile")) redirect("/app");
 
   const { tab: tabParam } = await searchParams;
   const tab: Tab = isTab(tabParam) ? tabParam : "profile";
@@ -58,13 +59,13 @@ export default async function SettingsPage({
   return (
     <div className="mx-auto w-full space-y-5 px-6 py-4">
       <header className="space-y-1">
-        <h1 className="text-2xl font-bold tracking-tight text-stone-900">Configurações</h1>
-        <p className="text-sm text-stone-500">
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900">Configurações</h1>
+        <p className="text-sm text-slate-500">
           Gerencie os dados da empresa, preferências e segurança da conta
         </p>
       </header>
 
-      <nav className="inline-flex w-full max-w-md items-center gap-1 rounded-xl border border-stone-200 bg-white p-1 shadow-sm">
+      <nav className="inline-flex w-full max-w-md items-center gap-1 rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
         {TABS.map(({ key, label, icon: Icon }) => {
           const active = tab === key;
           return (
@@ -73,8 +74,8 @@ export default async function SettingsPage({
               href={`/app/settings?tab=${key}`}
               className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                 active
-                  ? "bg-teal-50 text-teal-700"
-                  : "text-stone-600 hover:bg-stone-50 hover:text-stone-900"
+                  ? "bg-primary/10 text-primary"
+                  : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
               }`}
             >
               <Icon className="size-4" />

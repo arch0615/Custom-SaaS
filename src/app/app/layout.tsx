@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { requireSession } from "@/lib/auth/session";
 import { signOutAction } from "@/lib/auth/actions";
 import { AppShell } from "@/components/app/app-shell";
@@ -7,9 +8,21 @@ import {
   listNotificationsForUser,
 } from "@/lib/data/notifications";
 import { renderNotification } from "@/lib/notifications/templates";
+import { getOrgAccessState } from "@/lib/data/admin-orgs";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const session = await requireSession();
+
+  // Access gate — bloqueia entrada se a empresa está suspensa, cancelada ou
+  // com plano vencido. /access-blocked vive fora deste layout.
+  const access = await getOrgAccessState(session.orgId);
+  if (
+    access &&
+    (access.status === "suspended" || access.status === "cancelled" || access.expired)
+  ) {
+    redirect("/access-blocked");
+  }
+
   const navItems = filterNavByRole(appNavItems, session.role);
 
   const [items, unread] = await Promise.all([

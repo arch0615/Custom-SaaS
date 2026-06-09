@@ -16,10 +16,12 @@ import { requireSession } from "@/lib/auth/session";
 import {
   getDashboardDeltas,
   getDashboardKpis,
+  getFeaturedActiveProcess,
   getMonthlyOpenedClosed,
   getRecentActivity,
 } from "@/lib/data/dashboard";
 import { MonthlyChart } from "@/components/dashboard/monthly-chart";
+import { ProcessMilestones } from "@/components/dashboard/process-milestones";
 
 export const metadata = { title: "Dashboard" };
 
@@ -72,8 +74,8 @@ const DELTA_TONE: Record<Direction, { wrap: string; icon: string; Icon: typeof T
     Icon: TrendingDown,
   },
   flat: {
-    wrap: "bg-stone-100 text-stone-600 ring-1 ring-stone-200",
-    icon: "text-stone-600",
+    wrap: "bg-slate-100 text-slate-600 ring-1 ring-slate-200",
+    icon: "text-slate-600",
     Icon: Minus,
   },
 };
@@ -106,16 +108,16 @@ function KpiCard({
 }) {
   return (
     <Link href={href} className="block">
-      <article className="h-full rounded-2xl border border-stone-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
+      <article className="h-full rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
         <div className="flex items-start justify-between gap-3">
-          <span className="inline-flex size-10 items-center justify-center rounded-xl bg-teal-50 text-teal-700">
+          <span className="inline-flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
             <Icon className="size-5" />
           </span>
           <DeltaPill info={delta} />
         </div>
-        <div className="mt-4 text-3xl font-bold tracking-tight text-stone-900">{value}</div>
-        <div className="mt-1 text-sm font-medium text-stone-800">{label}</div>
-        <div className="mt-0.5 text-xs text-stone-500">{hint}</div>
+        <div className="mt-4 text-3xl font-bold tracking-tight text-slate-900">{value}</div>
+        <div className="mt-1 text-sm font-medium text-slate-800">{label}</div>
+        <div className="mt-0.5 text-xs text-slate-500">{hint}</div>
       </article>
     </Link>
   );
@@ -134,11 +136,12 @@ function pickActivityIcon(title: string): typeof FolderOpen {
 export default async function AppDashboardPage() {
   const session = await requireSession();
 
-  const [kpis, deltas, monthly, activity] = await Promise.all([
+  const [kpis, deltas, monthly, activity, featured] = await Promise.all([
     getDashboardKpis(session.orgId),
     getDashboardDeltas(session.orgId),
     getMonthlyOpenedClosed(session.orgId, 5),
     getRecentActivity(session.orgId, 8),
+    getFeaturedActiveProcess(session.orgId),
   ]);
 
   const openDelta = formatDelta(
@@ -195,30 +198,32 @@ export default async function AppDashboardPage() {
         />
       </section>
 
+      <ProcessMilestones process={featured} />
+
       <section className="grid grid-cols-1 gap-6 lg:grid-cols-5">
-        <article className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm lg:col-span-3">
+        <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm lg:col-span-3">
           <header className="mb-4 flex items-start justify-between gap-4">
             <div>
-              <h2 className="text-base font-semibold tracking-tight text-stone-900">
+              <h2 className="text-base font-semibold tracking-tight text-slate-900">
                 Processos por mês
               </h2>
-              <p className="text-sm text-stone-500">Comparativo de abertos vs finalizados</p>
+              <p className="text-sm text-slate-500">Comparativo de abertos vs finalizados</p>
             </div>
           </header>
           <MonthlyChart data={monthly} />
         </article>
 
-        <article className="flex max-h-[420px] flex-col rounded-2xl border border-stone-200 bg-white p-6 shadow-sm lg:col-span-2">
+        <article className="flex max-h-[420px] flex-col rounded-2xl border border-slate-200 bg-white p-6 shadow-sm lg:col-span-2">
           <header className="mb-4 flex items-start justify-between gap-4">
             <div>
-              <h2 className="text-base font-semibold tracking-tight text-stone-900">
+              <h2 className="text-base font-semibold tracking-tight text-slate-900">
                 Atividade recente
               </h2>
-              <p className="text-sm text-stone-500">Últimas ações da sua equipe</p>
+              <p className="text-sm text-slate-500">Últimas ações da sua equipe</p>
             </div>
           </header>
           {activity.length === 0 ? (
-            <p className="text-sm text-stone-500">
+            <p className="text-sm text-slate-500">
               Quando processos forem criados ou atualizados, a atividade aparece aqui.
             </p>
           ) : (
@@ -229,18 +234,18 @@ export default async function AppDashboardPage() {
                   <li key={e.id}>
                     <Link
                       href={`/app/processes/${e.processId}`}
-                      className="flex items-start gap-3 rounded-lg p-2 transition-colors hover:bg-stone-50"
+                      className="flex items-start gap-3 rounded-lg p-2 transition-colors hover:bg-slate-50"
                     >
-                      <span className="mt-0.5 inline-flex size-8 shrink-0 items-center justify-center rounded-lg bg-stone-100 text-stone-600">
+                      <span className="mt-0.5 inline-flex size-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-600">
                         <Icon className="size-4" />
                       </span>
                       <div className="min-w-0 flex-1 space-y-0.5">
-                        <p className="line-clamp-2 text-sm leading-snug text-stone-800">
+                        <p className="line-clamp-2 text-sm leading-snug text-slate-800">
                           <span className="font-medium">{e.processReference}</span>
-                          <span className="text-stone-500"> — </span>
+                          <span className="text-slate-500"> — </span>
                           {e.title}
                         </p>
-                        <p className="text-xs text-stone-500">{relativeTime(e.occurredAt)}</p>
+                        <p className="text-xs text-slate-500">{relativeTime(e.occurredAt)}</p>
                       </div>
                     </Link>
                   </li>

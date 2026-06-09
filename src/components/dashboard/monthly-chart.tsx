@@ -12,7 +12,7 @@ export function MonthlyChart({ data }: { data: MonthlyPoint[] }) {
   const total = data.reduce((acc, d) => acc + d.opened + d.closed, 0);
   if (total === 0) {
     return (
-      <div className="flex h-72 items-center justify-center text-sm text-stone-500">
+      <div className="flex h-72 items-center justify-center text-sm text-slate-500">
         Sem dados nos últimos meses.
       </div>
     );

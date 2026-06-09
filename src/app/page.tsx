@@ -6,7 +6,6 @@ import {
   Activity,
   ArrowRight,
   Bell,
-  Boxes,
   FileText,
   Mail,
   MessageCircle,
@@ -15,6 +14,7 @@ import {
   Sparkles,
   Zap,
 } from "lucide-react";
+import { BrandLogo } from "@/components/brand/brand-logo";
 
 export default async function HomePage() {
   const session = await auth();
@@ -23,7 +23,7 @@ export default async function HomePage() {
   }
 
   return (
-    <div className="min-h-svh bg-stone-100 text-stone-900">
+    <div className="min-h-svh bg-background text-foreground">
       <SiteHeader />
       <main>
         <Hero />
@@ -39,40 +39,39 @@ export default async function HomePage() {
 }
 
 function BrandMark({ size = "default" }: { size?: "default" | "lg" }) {
-  const box = size === "lg" ? "size-10" : "size-8";
-  const icon = size === "lg" ? "size-5" : "size-4";
   const text = size === "lg" ? "text-lg" : "text-base";
+  const logoSize: "md" | "lg" = size === "lg" ? "lg" : "md";
   return (
     <Link href="/" className="inline-flex items-center gap-2">
-      <span className={`inline-flex ${box} items-center justify-center rounded-lg bg-teal-700 text-white shadow-sm`}>
-        <Boxes className={icon} />
+      <BrandLogo size={logoSize} />
+      <span className={`${text} font-semibold tracking-tight text-slate-900`}>
+        Aduana<span className="text-primary">Sync</span>
       </span>
-      <span className={`${text} font-semibold tracking-tight`}>Aduanasync</span>
     </Link>
   );
 }
 
 function SiteHeader() {
   return (
-    <header className="sticky top-0 z-40 border-b border-stone-200/60 bg-stone-100/80 backdrop-blur supports-[backdrop-filter]:bg-stone-100/70">
+    <header className="sticky top-0 z-40 border-b border-slate-200/60 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/70">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
         <BrandMark />
-        <nav className="hidden items-center gap-8 text-sm text-stone-600 lg:flex">
-          <a href="#recursos" className="hover:text-stone-900">Recursos</a>
-          <a href="#como" className="hover:text-stone-900">Como funciona</a>
-          <a href="#precos" className="hover:text-stone-900">Preços</a>
-          <a href="mailto:contato@aduanasync.com.br" className="hover:text-stone-900">Contato</a>
+        <nav className="hidden items-center gap-8 text-sm text-slate-600 lg:flex">
+          <a href="#recursos" className="hover:text-slate-900">Recursos</a>
+          <a href="#como" className="hover:text-slate-900">Como funciona</a>
+          <a href="#precos" className="hover:text-slate-900">Preços</a>
+          <a href="mailto:contato@aduanasync.com.br" className="hover:text-slate-900">Contato</a>
         </nav>
         <div className="flex items-center gap-2">
           <Link
             href="/login"
-            className="rounded-md px-3 py-2 text-sm font-medium text-stone-700 hover:text-stone-900"
+            className="rounded-md px-3 py-2 text-sm font-medium text-slate-700 hover:text-slate-900"
           >
             Entrar
           </Link>
           <Link
             href="/signup"
-            className="rounded-md bg-teal-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-teal-800"
+            className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary/90"
           >
             Começar agora
           </Link>
@@ -84,32 +83,32 @@ function SiteHeader() {
 
 function Hero() {
   return (
-    <section className="border-b border-stone-200/60">
+    <section className="border-b border-slate-200/60">
       <div className="mx-auto grid max-w-6xl gap-12 px-6 py-20 lg:grid-cols-2 lg:items-center lg:py-24">
         <div className="space-y-7">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-teal-700">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
             Para despachantes aduaneiros
           </p>
-          <h1 className="text-balance text-4xl font-bold leading-[1.05] tracking-tight text-stone-900 sm:text-5xl lg:text-6xl">
+          <h1 className="text-balance text-4xl font-bold leading-[1.05] tracking-tight text-slate-900 sm:text-5xl lg:text-6xl">
             Acompanhe cada processo.
             <br />
             Tranquilize cada cliente.
           </h1>
-          <p className="max-w-xl text-lg leading-relaxed text-stone-600">
+          <p className="max-w-xl text-lg leading-relaxed text-slate-600">
             Substitua planilhas, e-mails e WhatsApp por um portal de rastreamento profissional.
             Seu cliente vê o status do processo em tempo real — sem precisar te ligar.
           </p>
           <div className="flex flex-wrap items-center gap-3 pt-1">
             <Link
               href="/signup"
-              className="inline-flex items-center gap-2 rounded-md bg-teal-700 px-5 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-teal-800"
+              className="inline-flex items-center gap-2 rounded-md bg-primary px-5 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary/90"
             >
               Começar agora
               <ArrowRight className="size-4" />
             </Link>
             <a
               href="#como"
-              className="inline-flex items-center gap-2 rounded-md border border-stone-300 bg-white px-5 py-3 text-sm font-semibold text-stone-800 shadow-sm transition-colors hover:bg-stone-50"
+              className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-800 shadow-sm transition-colors hover:bg-slate-50"
             >
               <PlayCircle className="size-4" />
               Ver demonstração
@@ -117,10 +116,10 @@ function Hero() {
           </div>
         </div>
         <div className="relative">
-          <div className="overflow-hidden rounded-2xl border border-stone-200 bg-stone-200 shadow-xl">
+          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-200 shadow-xl">
             <Image
               src="/marketing/hero-dashboard.jpg"
-              alt="Dashboard do Aduanasync com timeline de processo aduaneiro"
+              alt="Dashboard do AduanaSync com timeline de processo aduaneiro"
               width={1600}
               height={1100}
               priority
@@ -135,9 +134,9 @@ function Hero() {
 
 function TrustStrip() {
   return (
-    <section className="border-b border-stone-200/60 bg-stone-100/50">
+    <section className="border-b border-slate-200/60 bg-slate-100/50">
       <div className="mx-auto max-w-6xl px-6 py-6">
-        <p className="text-center text-sm text-stone-600">
+        <p className="text-center text-sm text-slate-600">
           Construído para brokers no Brasil · LGPD-compliant · Multi-tenant
         </p>
       </div>
@@ -164,13 +163,13 @@ function Features() {
     },
   ];
   return (
-    <section id="recursos" className="scroll-mt-20 border-b border-stone-200/60">
+    <section id="recursos" className="scroll-mt-20 border-b border-slate-200/60">
       <div className="mx-auto max-w-6xl px-6 py-24">
         <div className="mx-auto max-w-2xl space-y-3 text-center">
-          <h2 className="text-3xl font-bold tracking-tight text-stone-900 sm:text-4xl">
+          <h2 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
             Tudo que você precisa
           </h2>
-          <p className="text-lg text-stone-600">
+          <p className="text-lg text-slate-600">
             Uma suite completa para gerenciar processos aduaneiros e manter clientes informados.
           </p>
         </div>
@@ -178,13 +177,13 @@ function Features() {
           {items.map(({ icon: Icon, title, body }) => (
             <article
               key={title}
-              className="rounded-2xl border border-stone-200 bg-white p-7 shadow-sm transition-shadow hover:shadow-md"
+              className="rounded-2xl border border-slate-200 bg-white p-7 shadow-sm transition-shadow hover:shadow-md"
             >
-              <div className="mb-5 inline-flex size-11 items-center justify-center rounded-xl bg-teal-100 text-teal-700">
+              <div className="mb-5 inline-flex size-11 items-center justify-center rounded-xl bg-primary/15 text-primary">
                 <Icon className="size-5" />
               </div>
-              <h3 className="mb-2 text-lg font-semibold tracking-tight text-stone-900">{title}</h3>
-              <p className="text-sm leading-relaxed text-stone-600">{body}</p>
+              <h3 className="mb-2 text-lg font-semibold tracking-tight text-slate-900">{title}</h3>
+              <p className="text-sm leading-relaxed text-slate-600">{body}</p>
             </article>
           ))}
         </div>
@@ -225,13 +224,13 @@ function HowItWorks() {
     },
   ];
   return (
-    <section id="como" className="scroll-mt-20 border-b border-stone-200/60">
+    <section id="como" className="scroll-mt-20 border-b border-slate-200/60">
       <div className="mx-auto max-w-6xl px-6 py-24">
         <div className="mx-auto max-w-2xl space-y-3 text-center">
-          <h2 className="text-3xl font-bold tracking-tight text-stone-900 sm:text-4xl">
+          <h2 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
             Como funciona
           </h2>
-          <p className="text-lg text-stone-600">
+          <p className="text-lg text-slate-600">
             Quatro passos simples para transformar a experiência dos seus clientes.
           </p>
         </div>
@@ -243,7 +242,7 @@ function HowItWorks() {
                 key={s.n}
                 className={`grid items-center gap-10 lg:grid-cols-2 lg:gap-16 ${reverse ? "lg:[&>:first-child]:order-2" : ""}`}
               >
-                <div className="overflow-hidden rounded-2xl border border-stone-200 bg-stone-200 shadow-sm">
+                <div className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-200 shadow-sm">
                   <Image
                     src={s.img}
                     alt={s.alt}
@@ -253,9 +252,9 @@ function HowItWorks() {
                   />
                 </div>
                 <div className="space-y-4">
-                  <span className="block text-5xl font-bold tracking-tight text-teal-700/60">{s.n}</span>
-                  <h3 className="text-2xl font-semibold tracking-tight text-stone-900 sm:text-3xl">{s.title}</h3>
-                  <p className="max-w-lg text-base leading-relaxed text-stone-600">{s.body}</p>
+                  <span className="block text-5xl font-bold tracking-tight text-primary/60">{s.n}</span>
+                  <h3 className="text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">{s.title}</h3>
+                  <p className="max-w-lg text-base leading-relaxed text-slate-600">{s.body}</p>
                 </div>
               </div>
             );
@@ -274,25 +273,25 @@ function Differentiators() {
     { icon: MessageCircle, title: "Comunicação", body: "Troca de documentos e mensagens em um só lugar." },
   ];
   return (
-    <section className="border-b border-stone-200/60 bg-stone-100/40">
+    <section className="border-b border-slate-200/60 bg-slate-100/40">
       <div className="mx-auto max-w-6xl px-6 py-24">
         <div className="mx-auto max-w-2xl space-y-3 text-center">
-          <h2 className="text-3xl font-bold tracking-tight text-stone-900 sm:text-4xl">
-            Por que escolher a Aduanasync
+          <h2 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+            Por que escolher a AduanaSync
           </h2>
         </div>
         <div className="mt-12 grid gap-5 sm:grid-cols-2">
           {items.map(({ icon: Icon, title, body }) => (
             <article
               key={title}
-              className="flex items-start gap-4 rounded-2xl border border-stone-200 bg-white p-6"
+              className="flex items-start gap-4 rounded-2xl border border-slate-200 bg-white p-6"
             >
-              <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-xl bg-stone-100 text-stone-700">
+              <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-700">
                 <Icon className="size-5" />
               </span>
               <div className="space-y-1">
-                <h3 className="text-base font-semibold tracking-tight text-stone-900">{title}</h3>
-                <p className="text-sm leading-relaxed text-stone-600">{body}</p>
+                <h3 className="text-base font-semibold tracking-tight text-slate-900">{title}</h3>
+                <p className="text-sm leading-relaxed text-slate-600">{body}</p>
               </div>
             </article>
           ))}
@@ -307,25 +306,25 @@ function Pricing() {
     <section id="precos" className="scroll-mt-20">
       <div className="mx-auto max-w-6xl px-6 py-24">
         <div className="mx-auto max-w-2xl space-y-3 text-center">
-          <h2 className="text-3xl font-bold tracking-tight text-stone-900 sm:text-4xl">
+          <h2 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
             Preços
           </h2>
-          <p className="text-lg text-stone-600">
+          <p className="text-lg text-slate-600">
             Estamos preparando planos flexíveis para despachantes de todos os tamanhos.
           </p>
         </div>
         <div className="mx-auto mt-12 max-w-md">
-          <div className="rounded-2xl border border-stone-200 bg-white p-8 text-center shadow-sm">
-            <span className="mx-auto mb-5 inline-flex size-12 items-center justify-center rounded-full bg-stone-100 text-stone-600">
+          <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
+            <span className="mx-auto mb-5 inline-flex size-12 items-center justify-center rounded-full bg-slate-100 text-slate-600">
               <Mail className="size-5" />
             </span>
-            <h3 className="mb-2 text-xl font-semibold tracking-tight text-stone-900">Em breve</h3>
-            <p className="mb-6 text-sm leading-relaxed text-stone-600">
+            <h3 className="mb-2 text-xl font-semibold tracking-tight text-slate-900">Em breve</h3>
+            <p className="mb-6 text-sm leading-relaxed text-slate-600">
               Por enquanto, fale com a gente. Vamos entender suas necessidades e preparar a melhor proposta.
             </p>
             <a
               href="mailto:contato@aduanasync.com.br"
-              className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-teal-700 px-5 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-teal-800"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-primary px-5 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary/90"
             >
               <Mail className="size-4" />
               Falar com a gente
@@ -339,23 +338,23 @@ function Pricing() {
 
 function SiteFooter() {
   return (
-    <footer className="border-t border-stone-200/60 bg-stone-200/60">
+    <footer className="border-t border-slate-200/60 bg-slate-200/60">
       <div className="mx-auto max-w-6xl px-6 py-12">
         <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
           <div className="space-y-3">
             <BrandMark />
           </div>
-          <p className="max-w-sm text-sm text-stone-600 sm:text-right">
+          <p className="max-w-sm text-sm text-slate-600 sm:text-right">
             Acompanhe cada processo. Tranquilize cada cliente.
           </p>
         </div>
-        <div className="mt-8 flex flex-col gap-3 border-t border-stone-300/60 pt-6 text-sm text-stone-600 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-8 flex flex-col gap-3 border-t border-slate-300/60 pt-6 text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-between">
           <nav className="flex items-center gap-6">
-            <a href="#recursos" className="hover:text-stone-900">Produto</a>
-            <a href="mailto:contato@aduanasync.com.br" className="hover:text-stone-900">Contato</a>
-            <a href="#" className="hover:text-stone-900">LGPD</a>
+            <a href="#recursos" className="hover:text-slate-900">Produto</a>
+            <a href="mailto:contato@aduanasync.com.br" className="hover:text-slate-900">Contato</a>
+            <a href="#" className="hover:text-slate-900">LGPD</a>
           </nav>
-          <p>© 2026 Aduanasync. Todos os direitos reservados.</p>
+          <p>© 2026 AduanaSync. Todos os direitos reservados.</p>
         </div>
       </div>
     </footer>

@@ -5,6 +5,7 @@ import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 
 import { requireSession } from "@/lib/auth/session";
+import { denyIfMissing, requirePermission } from "@/lib/auth/permissions";
 import { getProcessForOrg } from "@/lib/data/processes";
 import {
   approveDocumentForOrg,
@@ -60,7 +61,7 @@ export async function uploadDocumentAction(
   formData: FormData,
 ): Promise<DocumentFormState> {
   const session = await requireSession();
-  if (session.role === "client") return { error: "Sem permissão." };
+  const denied = denyIfMissing(session.role, "document:upload"); if (denied) return denied;
 
   if (!rateLimit({ bucket: `upload:${session.userId}`, max: 10, windowMs: 60_000 })) {
     return { error: "Muitos uploads em pouco tempo. Tente novamente em instantes." };
@@ -129,7 +130,7 @@ export async function replaceDocumentAction(
   formData: FormData,
 ): Promise<DocumentFormState> {
   const session = await requireSession();
-  if (session.role === "client") return { error: "Sem permissão." };
+  const denied = denyIfMissing(session.role, "document:upload"); if (denied) return denied;
 
   const old = await getDocumentForOrg(session.orgId, documentId);
   if (!old || old.processId !== processId) return { error: "Documento não encontrado." };
@@ -174,7 +175,7 @@ export async function replaceDocumentAction(
 
 export async function deleteDocumentAction(processId: string, documentId: string): Promise<void> {
   const session = await requireSession();
-  if (session.role === "client") throw new Error("Sem permissão.");
+  requirePermission(session.role, "document:delete");
 
   const doc = await getDocumentForOrg(session.orgId, documentId);
   if (!doc || doc.processId !== processId) throw new Error("Documento não encontrado.");
@@ -195,7 +196,7 @@ export async function deleteDocumentAction(processId: string, documentId: string
 
 export async function approveDocumentAction(processId: string, documentId: string): Promise<void> {
   const session = await requireSession();
-  if (session.role === "client") throw new Error("Sem permissão.");
+  requirePermission(session.role, "document:approve_pending");
 
   const doc = await getDocumentForOrg(session.orgId, documentId);
   if (!doc || doc.processId !== processId) throw new Error("Documento não encontrado.");
@@ -219,7 +220,7 @@ export async function approveDocumentAction(processId: string, documentId: strin
 
 export async function rejectDocumentAction(processId: string, documentId: string): Promise<void> {
   const session = await requireSession();
-  if (session.role === "client") throw new Error("Sem permissão.");
+  requirePermission(session.role, "document:approve_pending");
 
   const doc = await getDocumentForOrg(session.orgId, documentId);
   if (!doc || doc.processId !== processId) throw new Error("Documento não encontrado.");

@@ -57,7 +57,7 @@ function Toggle({
       disabled={disabled}
       onClick={() => onChange?.(!on)}
       className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
-        on ? "bg-teal-600" : "bg-stone-200"
+        on ? "bg-primary" : "bg-slate-200"
       }`}
     >
       <span
@@ -100,8 +100,8 @@ function EmailToggleRow({
   return (
     <div className="flex items-start justify-between gap-4 py-3 first:pt-0 last:pb-0">
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-medium text-stone-900">{row.label}</p>
-        <p className="text-xs text-stone-500">{row.description}</p>
+        <p className="text-sm font-medium text-slate-900">{row.label}</p>
+        <p className="text-xs text-slate-500">{row.description}</p>
       </div>
       <Toggle on={on} onChange={handleChange} disabled={pending} label={row.label} />
     </div>
@@ -112,8 +112,8 @@ function StaticToggleRow({ label, description, on }: { label: string; descriptio
   return (
     <div className="flex items-start justify-between gap-4 py-3 first:pt-0 last:pb-0">
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-medium text-stone-900">{label}</p>
-        <p className="text-xs text-stone-500">{description}</p>
+        <p className="text-sm font-medium text-slate-900">{label}</p>
+        <p className="text-xs text-slate-500">{description}</p>
       </div>
       <Toggle on={on} disabled label={label} />
     </div>
@@ -131,17 +131,17 @@ export function NotificationsTab({
 }) {
   return (
     <div className="space-y-5">
-      <section className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
+      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <header className="mb-4 flex items-start gap-3">
-          <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg bg-teal-50 text-teal-700">
+          <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
             <Mail className="size-4" />
           </span>
           <div>
-            <h2 className="text-sm font-semibold text-stone-900">E-mail</h2>
-            <p className="text-xs text-stone-500">Notificações enviadas para {userEmail}</p>
+            <h2 className="text-sm font-semibold text-slate-900">E-mail</h2>
+            <p className="text-xs text-slate-500">Notificações enviadas para {userEmail}</p>
           </div>
         </header>
-        <div className="divide-y divide-stone-100">
+        <div className="divide-y divide-slate-100">
           {EMAIL_ROWS.map((row) => (
             <EmailToggleRow
               key={row.kind}
@@ -153,22 +153,22 @@ export function NotificationsTab({
         </div>
       </section>
 
-      <section className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm opacity-90">
+      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm opacity-90">
         <header className="mb-4 flex items-start justify-between gap-3">
           <div className="flex items-start gap-3">
             <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-700">
               <MessageSquare className="size-4" />
             </span>
             <div>
-              <h2 className="text-sm font-semibold text-stone-900">Push no navegador</h2>
-              <p className="text-xs text-stone-500">Notificações instantâneas no desktop e mobile</p>
+              <h2 className="text-sm font-semibold text-slate-900">Push no navegador</h2>
+              <p className="text-xs text-slate-500">Notificações instantâneas no desktop e mobile</p>
             </div>
           </div>
-          <span className="inline-flex items-center gap-1 self-start rounded-full bg-stone-100 px-2 py-0.5 text-[11px] font-medium text-stone-600">
+          <span className="inline-flex items-center gap-1 self-start rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600">
             Em breve
           </span>
         </header>
-        <div className="divide-y divide-stone-100">
+        <div className="divide-y divide-slate-100">
           <StaticToggleRow
             label="Novo processo"
             description="Pop-up no navegador quando um processo for criado"
@@ -187,7 +187,7 @@ export function NotificationsTab({
         </div>
       </section>
 
-      <p className="text-center text-xs text-stone-500">
+      <p className="text-center text-xs text-slate-500">
         Alterações em E-mail são salvas automaticamente.
       </p>
     </div>

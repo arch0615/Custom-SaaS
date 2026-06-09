@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 import { Toaster } from "@/components/ui/sonner";
 
 export const metadata: Metadata = {
-  title: { default: "Aduanasync", template: "%s · Aduanasync" },
+  title: { default: "AduanaSync", template: "%s · AduanaSync" },
   description: "Plataforma para despachantes aduaneiros",
 };
 

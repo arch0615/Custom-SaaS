@@ -21,30 +21,57 @@ function impersonateQuery(impersonating: boolean, customerId: string): string {
   return impersonating ? `?impersonate=${customerId}` : "";
 }
 
+function firstName(name: string | null | undefined): string | null {
+  if (!name) return null;
+  return name.trim().split(/\s+/)[0] ?? null;
+}
+
 export default async function PortalHomePage({
   searchParams,
 }: {
   searchParams: Promise<{ impersonate?: string }>;
 }) {
   const { impersonate } = await searchParams;
-  const { session, customer, impersonating } = await requirePortalCustomer(impersonate);
+  const { session, customers, primary, customerIds, impersonating } = await requirePortalCustomer(impersonate);
 
-  const rows = await listProcessesForOrg(session.orgId, { customerId: customer.id });
+  const rows = await listProcessesForOrg(session.orgId, { customerIds });
 
   // Fetch the last event for each process — quick N+1 for the MVP (small lists)
   const lastEvents = await Promise.all(
     rows.map((p) => listTimelineForProcess(session.orgId, p.id).then((evs) => evs[evs.length - 1] ?? null)),
   );
 
-  const q = impersonateQuery(impersonating, customer.id);
+  const q = impersonateQuery(impersonating, primary.id);
+  const hasMultipleCompanies = customers.length > 1;
+  const customerById = new Map(customers.map((c) => [c.id, c]));
+
+  // Pick a friendly greeting. Single empresa keeps the company name; multi-empresa
+  // shows the user's first name (the company tags appear below).
+  const greetingTarget = hasMultipleCompanies
+    ? firstName(session.userName) ?? "tudo bem"
+    : primary.tradeName ?? primary.legalName;
 
   return (
     <div className="mx-auto w-full space-y-6 px-6 py-4">
-      <header className="space-y-1">
-        <h1 className="text-2xl font-semibold tracking-tight">Olá, {customer.tradeName ?? customer.legalName}</h1>
+      <header className="space-y-2">
+        <h1 className="text-2xl font-semibold tracking-tight">Olá, {greetingTarget}</h1>
         <p className="text-sm text-muted-foreground">
           Acompanhe o andamento das suas importações e exportações.
         </p>
+        {hasMultipleCompanies && (
+          <div className="flex flex-wrap gap-2 pt-1">
+            {customers.map((c) => (
+              <Badge
+                key={c.id}
+                variant="secondary"
+                className="text-xs"
+                title={c.cnpj}
+              >
+                {c.tradeName ?? c.legalName}
+              </Badge>
+            ))}
+          </div>
+        )}
       </header>
 
       {rows.length === 0 ? (
@@ -61,6 +88,7 @@ export default async function PortalHomePage({
           {rows.map((p, i) => {
             const delayed = isDelayed(p.stage, p.arrivalDate);
             const last = lastEvents[i];
+            const empresa = customerById.get(p.customerId);
             return (
               <Link
                 key={p.id}
@@ -69,11 +97,21 @@ export default async function PortalHomePage({
               >
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="font-medium">{p.reference}</span>
+                  {p.invoiceNumber && (
+                    <span className="font-mono text-xs text-muted-foreground">
+                      Invoice {p.invoiceNumber}
+                    </span>
+                  )}
                   <Badge variant="outline" className="text-xs">{MODAL_LABEL[p.modal]}</Badge>
                   <Badge variant={stageBadgeVariant(p.stage, p.arrivalDate)} className="text-xs">
                     {STAGE_LABEL[p.stage]}
                     {delayed && <span className="ml-1">· Atrasado</span>}
                   </Badge>
+                  {hasMultipleCompanies && empresa && (
+                    <Badge variant="secondary" className="text-xs">
+                      {empresa.tradeName ?? empresa.legalName}
+                    </Badge>
+                  )}
                 </div>
                 <p className="mt-2 text-sm text-muted-foreground">
                   {p.origin} → {p.destination}

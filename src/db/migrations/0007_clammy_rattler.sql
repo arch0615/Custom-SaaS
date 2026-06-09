@@ -1,0 +1,1 @@
+ALTER TABLE "tracking_subscriptions" ADD COLUMN "provider_subscription_id" text;

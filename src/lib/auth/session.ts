@@ -4,7 +4,7 @@ import { auth } from "@/auth";
 import { db } from "@/db/client";
 import { organizations } from "@/db/schema/organizations";
 
-export type MemberRole = "broker_admin" | "broker_staff" | "client";
+export type MemberRole = "broker_admin" | "broker_staff" | "client" | "platform_admin";
 
 export type ActiveSession = {
   userId: string;

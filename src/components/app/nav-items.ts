@@ -1,4 +1,5 @@
-type MemberRole = "broker_admin" | "broker_staff" | "client";
+import type { MemberRole } from "@/lib/auth/session";
+import { hasAnyPermission, type Permission } from "@/lib/auth/permissions";
 
 export type NavIconName =
   | "dashboard"
@@ -11,18 +12,19 @@ export type NavItem = {
   href: string;
   label: string;
   icon: NavIconName;
-  roles: MemberRole[];
+  /** Pelo menos uma destas permissões para que o item apareça. */
+  permissions: Permission[];
 };
 
 export const appNavItems: NavItem[] = [
-  { href: "/app", label: "Dashboard", icon: "dashboard", roles: ["broker_admin", "broker_staff"] },
-  { href: "/app/processes", label: "Processos", icon: "processes", roles: ["broker_admin", "broker_staff"] },
-  { href: "/app/customers", label: "Clientes", icon: "customers", roles: ["broker_admin", "broker_staff"] },
-  { href: "/app/team", label: "Equipe", icon: "team", roles: ["broker_admin"] },
-  { href: "/app/settings", label: "Configurações", icon: "settings", roles: ["broker_admin"] },
+  { href: "/app", label: "Dashboard", icon: "dashboard", permissions: ["process:view"] },
+  { href: "/app/processes", label: "Processos", icon: "processes", permissions: ["process:view"] },
+  { href: "/app/customers", label: "Clientes", icon: "customers", permissions: ["customer:view"] },
+  { href: "/app/team", label: "Equipe", icon: "team", permissions: ["team:view"] },
+  { href: "/app/settings", label: "Configurações", icon: "settings", permissions: ["settings:org_profile"] },
 ];
 
 export function filterNavByRole(items: NavItem[], role: MemberRole | null): NavItem[] {
   if (!role) return [];
-  return items.filter((it) => it.roles.includes(role));
+  return items.filter((it) => hasAnyPermission(role, it.permissions));
 }

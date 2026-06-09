@@ -4,6 +4,7 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 
 import { requireSession } from "@/lib/auth/session";
+import { denyIfMissing, requirePermission } from "@/lib/auth/permissions";
 import { getCustomerForOrg } from "@/lib/data/customers";
 import {
   createContact,
@@ -59,7 +60,7 @@ export async function addContactAction(
   formData: FormData,
 ): Promise<ContactState> {
   const session = await requireSession();
-  if (session.role === "client") return { error: "Sem permissão." };
+  const denied = denyIfMissing(session.role, "customer:invite_contact"); if (denied) return denied;
 
   const customer = await getCustomerForOrg(session.orgId, customerId);
   if (!customer) return { error: "Cliente não encontrado." };
@@ -97,7 +98,7 @@ export async function addContactAction(
       subject: `Acesso ao portal de ${session.orgName}`,
       text: `Olá, ${name}.
 
-Sua empresa ${customer.legalName} está sendo acompanhada por ${session.orgName} no Aduanasync.
+Sua empresa ${customer.legalName} está sendo acompanhada por ${session.orgName} no AduanaSync.
 
 Aceite o convite e defina sua senha em: ${inviteUrl}
 
@@ -121,7 +122,7 @@ O link expira em 72 horas.`,
 
 export async function deleteContactAction(customerId: string, contactId: string): Promise<void> {
   const session = await requireSession();
-  if (session.role === "client") throw new Error("Sem permissão.");
+  requirePermission(session.role, "customer:invite_contact");
 
   const contact = await getContactForOrg(session.orgId, contactId);
   if (!contact || contact.customerId !== customerId) throw new Error("Contato não encontrado.");
@@ -135,7 +136,7 @@ export async function resendContactInviteAction(
   contactId: string,
 ): Promise<{ inviteUrl: string }> {
   const session = await requireSession();
-  if (session.role === "client") throw new Error("Sem permissão.");
+  requirePermission(session.role, "customer:invite_contact");
 
   const contact = await getContactForOrg(session.orgId, contactId);
   if (!contact || contact.customerId !== customerId) throw new Error("Contato não encontrado.");

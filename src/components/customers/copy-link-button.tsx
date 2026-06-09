@@ -22,7 +22,7 @@ export function CopyLinkButton({ value, label = "Copiar" }: { value: string; lab
     <button
       type="button"
       onClick={handleCopy}
-      className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-700 transition-colors hover:bg-stone-50"
+      className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-50"
     >
       {copied ? <Check className="size-3.5 text-emerald-600" /> : <Copy className="size-3.5" />}
       {copied ? "Copiado" : label}

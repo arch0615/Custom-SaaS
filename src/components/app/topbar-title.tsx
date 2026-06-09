@@ -18,6 +18,6 @@ const TITLE_MAP: Array<[RegExp, string]> = [
 export function TopbarTitle() {
   const pathname = usePathname();
   const match = TITLE_MAP.find(([re]) => re.test(pathname));
-  const title = match?.[1] ?? "Aduanasync";
-  return <h1 className="truncate text-lg font-semibold tracking-tight text-stone-900">{title}</h1>;
+  const title = match?.[1] ?? "AduanaSync";
+  return <h1 className="truncate text-lg font-semibold tracking-tight text-slate-900">{title}</h1>;
 }

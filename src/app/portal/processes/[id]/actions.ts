@@ -53,15 +53,16 @@ function validateFile(file: unknown): { ok: true; file: File } | { ok: false; er
 }
 
 export async function requestUpdateAction(processId: string, impersonateId?: string): Promise<void> {
-  const { session, customer, impersonating } = await requirePortalCustomer(impersonateId);
+  const { session, customers, customerIds, impersonating } = await requirePortalCustomer(impersonateId);
   if (impersonating) {
     throw new Error("Não disponível no modo preview.");
   }
 
   const proc = await getProcessForOrg(session.orgId, processId);
-  if (!proc || proc.customerId !== customer.id) {
+  if (!proc || !customerIds.includes(proc.customerId)) {
     throw new Error("Processo não encontrado.");
   }
+  const procCustomer = customers.find((c) => c.id === proc.customerId)!;
 
   const recipients = await db
     .select({ userId: orgMembers.userId })
@@ -84,8 +85,8 @@ export async function requestUpdateAction(processId: string, impersonateId?: str
       payload: {
         processId,
         processReference: proc.reference,
-        customerId: customer.id,
-        customerName: customer.legalName,
+        customerId: procCustomer.id,
+        customerName: procCustomer.legalName,
         requestedAt: new Date().toISOString(),
       },
     })),
@@ -100,7 +101,7 @@ export async function clientUploadDocumentAction(
   _prev: DocumentFormState,
   formData: FormData,
 ): Promise<DocumentFormState> {
-  const { session, customer, impersonating } = await requirePortalCustomer(impersonateId);
+  const { session, customers, customerIds, impersonating } = await requirePortalCustomer(impersonateId);
   if (impersonating) {
     return { error: "Não disponível no modo preview." };
   }
@@ -110,9 +111,10 @@ export async function clientUploadDocumentAction(
   }
 
   const proc = await getProcessForOrg(session.orgId, processId);
-  if (!proc || proc.customerId !== customer.id || proc.deletedAt) {
+  if (!proc || !customerIds.includes(proc.customerId) || proc.deletedAt) {
     return { error: "Processo não encontrado." };
   }
+  const procCustomer = customers.find((c) => c.id === proc.customerId)!;
 
   const typeParse = typeSchema.safeParse(formData.get("type"));
   if (!typeParse.success) return { fieldErrors: { type: ["Tipo inválido."] } };
@@ -156,8 +158,8 @@ export async function clientUploadDocumentAction(
       payload: {
         processId,
         processReference: proc.reference,
-        customerId: customer.id,
-        customerName: customer.legalName,
+        customerId: procCustomer.id,
+        customerName: procCustomer.legalName,
         filename,
         docType: DOCUMENT_TYPE_LABEL[typeParse.data as DocumentType],
       },
