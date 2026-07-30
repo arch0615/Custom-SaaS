@@ -7,6 +7,7 @@ import { revalidatePath } from "next/cache";
 import { requireSession } from "@/lib/auth/session";
 import { denyIfMissing, requirePermission } from "@/lib/auth/permissions";
 import { getProcessForOrg } from "@/lib/data/processes";
+import { getCustomerForOrg } from "@/lib/data/customers";
 import {
   approveDocumentForOrg,
   createDocumentForOrg,
@@ -106,6 +107,7 @@ export async function uploadDocumentAction(
 
   const recipients = await resolveCustomerClientUsers(session.orgId, proc.customerId);
   if (recipients.length > 0) {
+    const customer = await getCustomerForOrg(session.orgId, proc.customerId);
     await dispatchNotification({
       orgId: session.orgId,
       kind: "doc_added_by_broker",
@@ -114,6 +116,7 @@ export async function uploadDocumentAction(
         processReference: proc.reference,
         filename,
         docType: DOCUMENT_TYPE_LABEL[typeParse.data as DocumentType],
+        customerName: customer?.tradeName ?? customer?.legalName ?? "",
       },
       recipients,
     });

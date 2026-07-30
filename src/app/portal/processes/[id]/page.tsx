@@ -117,6 +117,8 @@ export default async function PortalProcessPage({
           />
           <Field label={proc.modal === "air" ? "HAWB" : "HBL"} value={proc.hblNumber} />
           <Field label={proc.modal === "air" ? "MAWB" : "MBL"} value={proc.mblNumber} />
+          <Field label="CE Master" value={proc.ceMaster} />
+          <Field label="CE House" value={proc.ceHouse} />
           <PortalContainers
             label={proc.modal === "air" ? "ULDs" : "Containers"}
             list={proc.containers as { number: string | null; type: string | null; quantity: number }[] | null | undefined}

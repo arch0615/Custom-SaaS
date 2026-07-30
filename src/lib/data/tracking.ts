@@ -59,6 +59,28 @@ export async function createTrackingSubscription(input: {
   return row ?? null;
 }
 
+export async function getTrackingSubscription(orgId: string, id: string) {
+  const [row] = await db
+    .select({
+      id: trackingSubscriptions.id,
+      processId: trackingSubscriptions.processId,
+      provider: trackingSubscriptions.provider,
+      refKind: trackingSubscriptions.refKind,
+      externalRef: trackingSubscriptions.externalRef,
+    })
+    .from(trackingSubscriptions)
+    .where(and(eq(trackingSubscriptions.orgId, orgId), eq(trackingSubscriptions.id, id)))
+    .limit(1);
+  return row ?? null;
+}
+
+export async function markTrackingPolled(id: string) {
+  await db
+    .update(trackingSubscriptions)
+    .set({ lastPolledAt: new Date() })
+    .where(eq(trackingSubscriptions.id, id));
+}
+
 export async function deleteTrackingSubscription(orgId: string, id: string) {
   const [row] = await db
     .delete(trackingSubscriptions)

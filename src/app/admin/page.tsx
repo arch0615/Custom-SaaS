@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { ArrowRight, Building2, Clock, Pause, ShieldCheck } from "lucide-react";
+import { ArrowRight, Building2, Clock, Pause, Radio, ShieldCheck } from "lucide-react";
 import { getAdminCounts, listAdminOrgs } from "@/lib/data/admin-orgs";
+import { getLatestSearatesQuota } from "@/lib/tracking/searates-quota";
 
 export const metadata = { title: "Painel · Visão geral" };
 
@@ -13,6 +14,7 @@ const dateFmt = new Intl.DateTimeFormat("pt-BR", {
 export default async function AdminHomePage() {
   const [counts, orgs] = await Promise.all([getAdminCounts(), listAdminOrgs()]);
   const recent = orgs.slice(0, 5);
+  const quota = getLatestSearatesQuota();
 
   return (
     <div className="mx-auto w-full space-y-5 px-6 py-4">
@@ -29,6 +31,8 @@ export default async function AdminHomePage() {
         <Kpi icon={Pause} tone="bg-red-50 text-red-700" value={counts.suspended} label="Suspensas" />
         <Kpi icon={Clock} tone="bg-orange-50 text-orange-700" value={counts.expiringSoon} label="Vencendo (7d)" />
       </section>
+
+      <SearatesQuotaCard quota={quota} />
 
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <header className="mb-4 flex items-start justify-between gap-3">
@@ -81,6 +85,103 @@ export default async function AdminHomePage() {
           </ul>
         )}
       </section>
+    </div>
+  );
+}
+
+const quotaTimeFmt = new Intl.DateTimeFormat("pt-BR", {
+  day: "2-digit",
+  month: "2-digit",
+  hour: "2-digit",
+  minute: "2-digit",
+});
+
+function SearatesQuotaCard({
+  quota,
+}: {
+  quota: ReturnType<typeof getLatestSearatesQuota>;
+}) {
+  return (
+    <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+      <header className="mb-4 flex items-start gap-3">
+        <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+          <Radio className="size-4" />
+        </span>
+        <div className="flex-1">
+          <h2 className="text-sm font-semibold text-slate-900">SeaRates · Cota do trial</h2>
+          <p className="text-xs text-slate-500">
+            Atualiza a cada chamada real ao SeaRates. Zera se o servidor reiniciar.
+          </p>
+        </div>
+      </header>
+      {!quota ? (
+        <p className="text-sm text-slate-500">
+          Nenhuma chamada ao SeaRates registrada nesta sessão do servidor.
+        </p>
+      ) : (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <QuotaRow
+            label="Chamadas"
+            used={
+              quota.apiCallsTotal != null && quota.apiCallsRemaining != null
+                ? quota.apiCallsTotal - quota.apiCallsRemaining
+                : null
+            }
+            remaining={quota.apiCallsRemaining}
+            total={quota.apiCallsTotal}
+          />
+          <QuotaRow
+            label="Embarques únicos"
+            used={
+              quota.uniqueShipmentsTotal != null && quota.uniqueShipmentsRemaining != null
+                ? quota.uniqueShipmentsTotal - quota.uniqueShipmentsRemaining
+                : null
+            }
+            remaining={quota.uniqueShipmentsRemaining}
+            total={quota.uniqueShipmentsTotal}
+          />
+          <p className="col-span-full text-xs text-slate-500">
+            Última observação: {quotaTimeFmt.format(quota.observedAt)}
+          </p>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function QuotaRow({
+  label,
+  used,
+  remaining,
+  total,
+}: {
+  label: string;
+  used: number | null;
+  remaining: number | null;
+  total: number | null;
+}) {
+  const pct =
+    total && total > 0 && remaining != null
+      ? Math.max(0, Math.min(100, ((total - remaining) / total) * 100))
+      : 0;
+  const critical = remaining != null && total != null && remaining / total <= 0.25;
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-baseline justify-between">
+        <span className="text-xs font-medium text-slate-600">{label}</span>
+        <span className={`font-mono text-xs ${critical ? "text-red-600" : "text-slate-500"}`}>
+          {used ?? "—"} / {total ?? "—"} usados
+        </span>
+      </div>
+      <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+        <div
+          className={`h-full rounded-full ${critical ? "bg-red-500" : "bg-primary"}`}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+      <p className="text-[11px] text-slate-500">
+        {remaining ?? "—"} restantes
+      </p>
     </div>
   );
 }

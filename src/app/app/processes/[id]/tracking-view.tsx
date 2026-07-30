@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useId, useRef, useState, useTransition } from "react";
-import { Plus, Radio, Trash2 } from "lucide-react";
+import { Plus, Radio, RefreshCw, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -14,6 +14,7 @@ import {
 import {
   addTrackingSubscriptionAction,
   deleteTrackingSubscriptionAction,
+  refreshTrackingSubscriptionAction,
   type TrackingFormState,
 } from "./tracking-actions";
 
@@ -58,6 +59,7 @@ export function TrackingView({
   const [state, formAction, addPending] = useActionState<TrackingFormState, FormData>(action, {});
   const formRef = useRef<HTMLFormElement>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [refreshingId, setRefreshingId] = useState<string | null>(null);
 
   const refId = useId();
   const providerId = useId();
@@ -80,8 +82,9 @@ export function TrackingView({
           <div>
             <h2 className="text-sm font-semibold text-slate-900">Adicionar rastreamento</h2>
             <p className="text-xs text-slate-500">
-              Conecte container, BL, AWB ou booking a um provedor. Use <strong>Manual</strong> para
-              simular eventos sem provedor externo (útil para demos).
+              Conecte container, BL, AWB ou booking a um provedor. <strong>SeaRates</strong> só
+              rastreia marítimo (CT/BL/BK — sem AWB). <strong>Manual</strong> serve pra registrar
+              eventos sem provedor externo.
             </p>
           </div>
         </header>
@@ -150,8 +153,10 @@ export function TrackingView({
         <header className="border-b border-slate-200 px-6 py-4">
           <h2 className="text-sm font-semibold text-slate-900">Rastreamentos ativos</h2>
           <p className="text-xs text-slate-500">
-            Eventos chegam por webhook em <code className="font-mono text-[11px]">/api/webhooks/tracking</code>{" "}
-            e aparecem automaticamente na Timeline.
+            <strong>SeaRates:</strong> clique em <RefreshCw className="inline size-3" /> pra buscar
+            o status agora (consome 1 chamada da cota). <strong>Manual:</strong> adicione eventos
+            pela Timeline. Webhooks assinados também chegam em{" "}
+            <code className="font-mono text-[11px]">/api/webhooks/tracking</code>.
           </p>
         </header>
         {rows.length === 0 ? (
@@ -179,27 +184,63 @@ export function TrackingView({
                     )}
                   </p>
                 </div>
-                <button
-                  type="button"
-                  disabled={pending && deletingId === row.id}
-                  onClick={() => {
-                    setDeletingId(row.id);
-                    startTransition(async () => {
-                      try {
-                        await deleteTrackingSubscriptionAction(processId, row.id);
-                        toast.success("Rastreamento removido.");
-                      } catch (err) {
-                        toast.error(err instanceof Error ? err.message : "Falha ao remover.");
-                      } finally {
-                        setDeletingId(null);
-                      }
-                    });
-                  }}
-                  aria-label="Remover rastreamento"
-                  className="inline-flex size-8 shrink-0 items-center justify-center rounded-md text-slate-500 hover:bg-red-50 hover:text-red-600"
-                >
-                  <Trash2 className="size-4" />
-                </button>
+                <div className="flex shrink-0 items-center gap-1">
+                  {row.provider === "searates" && (
+                    <button
+                      type="button"
+                      disabled={pending && refreshingId === row.id}
+                      onClick={() => {
+                        setRefreshingId(row.id);
+                        startTransition(async () => {
+                          try {
+                            const r = await refreshTrackingSubscriptionAction(processId, row.id);
+                            if (r.accepted > 0) {
+                              toast.success(
+                                `${r.accepted} novo${r.accepted === 1 ? "" : "s"} evento${r.accepted === 1 ? "" : "s"} importado${r.accepted === 1 ? "" : "s"}.`,
+                              );
+                            } else if (r.status) {
+                              toast.info(`Sem novidades. Status atual: ${r.status}.`);
+                            } else {
+                              toast.info("Sem novidades.");
+                            }
+                          } catch (err) {
+                            toast.error(err instanceof Error ? err.message : "Falha ao atualizar.");
+                          } finally {
+                            setRefreshingId(null);
+                          }
+                        });
+                      }}
+                      aria-label="Atualizar agora"
+                      title="Consultar SeaRates agora (consome cota)"
+                      className="inline-flex size-8 items-center justify-center rounded-md text-slate-500 hover:bg-primary/10 hover:text-primary disabled:opacity-50"
+                    >
+                      <RefreshCw
+                        className={`size-4 ${pending && refreshingId === row.id ? "animate-spin" : ""}`}
+                      />
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    disabled={pending && deletingId === row.id}
+                    onClick={() => {
+                      setDeletingId(row.id);
+                      startTransition(async () => {
+                        try {
+                          await deleteTrackingSubscriptionAction(processId, row.id);
+                          toast.success("Rastreamento removido.");
+                        } catch (err) {
+                          toast.error(err instanceof Error ? err.message : "Falha ao remover.");
+                        } finally {
+                          setDeletingId(null);
+                        }
+                      });
+                    }}
+                    aria-label="Remover rastreamento"
+                    className="inline-flex size-8 items-center justify-center rounded-md text-slate-500 hover:bg-red-50 hover:text-red-600"
+                  >
+                    <Trash2 className="size-4" />
+                  </button>
+                </div>
               </li>
             ))}
           </ul>

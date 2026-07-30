@@ -115,6 +115,7 @@ export async function advanceStageAction(id: string, formData: FormData) {
 
   const recipients = await resolveCustomerClientUsers(session.orgId, existing.customerId);
   if (recipients.length > 0) {
+    const customer = await getCustomerForOrg(session.orgId, existing.customerId);
     await dispatchNotification({
       orgId: session.orgId,
       kind: "stage_advanced",
@@ -123,6 +124,7 @@ export async function advanceStageAction(id: string, formData: FormData) {
         processReference: existing.reference,
         stageLabel: STAGE_LABEL[toStage],
         toStage,
+        customerName: customer?.tradeName ?? customer?.legalName ?? "",
       },
       recipients,
     });

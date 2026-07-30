@@ -23,12 +23,14 @@ export function renderNotification(
     case "stage_advanced":
       return {
         title: `${ref} avançou para ${stageLabel}`,
-        body: customerName ? `Cliente: ${customerName}` : null,
+        body: customerName ? `Empresa: ${customerName}` : null,
         href: processId ? `/portal/processes/${processId}` : null,
-        emailSubject: `Seu processo ${ref} avançou para ${stageLabel}`,
+        emailSubject: customerName
+          ? `[${customerName}] ${ref} avançou para ${stageLabel}`
+          : `Seu processo ${ref} avançou para ${stageLabel}`,
         emailText: `Olá,
 
-O processo ${ref} avançou para a etapa "${stageLabel}".
+${customerName ? `Empresa: ${customerName}\n` : ""}O processo ${ref} avançou para a etapa "${stageLabel}".
 
 Acompanhe os detalhes no portal.
 
@@ -37,12 +39,16 @@ Acompanhe os detalhes no portal.
     case "doc_added_by_broker":
       return {
         title: `Novo documento em ${ref}: ${docFilename}`,
-        body: docType ? `Tipo: ${docType}` : null,
+        body: [customerName ? `Empresa: ${customerName}` : null, docType ? `Tipo: ${docType}` : null]
+          .filter(Boolean)
+          .join(" · ") || null,
         href: processId ? `/portal/processes/${processId}` : null,
-        emailSubject: `Novo documento em ${ref}`,
+        emailSubject: customerName
+          ? `[${customerName}] Novo documento em ${ref}`
+          : `Novo documento em ${ref}`,
         emailText: `Olá,
 
-O despachante adicionou o documento "${docFilename}" ao processo ${ref}.
+${customerName ? `Empresa: ${customerName}\n` : ""}O despachante adicionou o documento "${docFilename}" ao processo ${ref}.
 
 — Despachante`,
       };
@@ -65,10 +71,12 @@ O despachante adicionou o documento "${docFilename}" ao processo ${ref}.
     case "doc_replaced":
       return {
         title: `${ref}: documento substituído (${docFilename})`,
-        body: null,
+        body: customerName ? `Empresa: ${customerName}` : null,
         href: processId ? `/portal/processes/${processId}` : null,
-        emailSubject: `Documento substituído em ${ref}`,
-        emailText: `O documento "${docFilename}" no processo ${ref} foi substituído por uma nova versão.`,
+        emailSubject: customerName
+          ? `[${customerName}] Documento substituído em ${ref}`
+          : `Documento substituído em ${ref}`,
+        emailText: `${customerName ? `Empresa: ${customerName}\n\n` : ""}O documento "${docFilename}" no processo ${ref} foi substituído por uma nova versão.`,
       };
     case "process_delayed":
       return {
@@ -81,10 +89,10 @@ O despachante adicionou o documento "${docFilename}" ao processo ${ref}.
     case "pendency_flagged":
       return {
         title: `Pendência em ${ref}`,
-        body: null,
+        body: customerName ? `Empresa: ${customerName}` : null,
         href: processId ? `/portal/processes/${processId}` : null,
-        emailSubject: `Pendência em ${ref}`,
-        emailText: `Há uma pendência no processo ${ref}. Verifique no portal.`,
+        emailSubject: customerName ? `[${customerName}] Pendência em ${ref}` : `Pendência em ${ref}`,
+        emailText: `${customerName ? `Empresa: ${customerName}\n\n` : ""}Há uma pendência no processo ${ref}. Verifique no portal.`,
       };
     case "team_invited":
     case "client_invited":

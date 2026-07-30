@@ -2,11 +2,17 @@ import Link from "next/link";
 import { requirePortalCustomer } from "@/lib/portal/customer-context";
 import { listProcessesForOrg } from "@/lib/data/processes";
 import { listTimelineForProcess } from "@/lib/data/timeline";
-import { MODAL_LABEL, STAGE_LABEL, isDelayed, stageBadgeVariant } from "@/lib/process-status";
+import { MODAL_LABEL, isDelayed } from "@/lib/process-status";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { StagePill } from "@/components/processes/stage-pill";
 
 export const metadata = { title: "Portal" };
+
+type Tab = "ongoing" | "done";
+function isTab(v: string | undefined): v is Tab {
+  return v === "ongoing" || v === "done";
+}
 
 const dateFmt = new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
 const dateTimeFmt = new Intl.DateTimeFormat("pt-BR", {
@@ -29,12 +35,19 @@ function firstName(name: string | null | undefined): string | null {
 export default async function PortalHomePage({
   searchParams,
 }: {
-  searchParams: Promise<{ impersonate?: string }>;
+  searchParams: Promise<{ impersonate?: string; tab?: string }>;
 }) {
-  const { impersonate } = await searchParams;
+  const { impersonate, tab: tabRaw } = await searchParams;
   const { session, customers, primary, customerIds, impersonating } = await requirePortalCustomer(impersonate);
 
-  const rows = await listProcessesForOrg(session.orgId, { customerIds });
+  const tab: Tab = isTab(tabRaw) ? tabRaw : "ongoing";
+
+  const allRows = await listProcessesForOrg(session.orgId, { customerIds });
+
+  // Mesmo critério do /app/processes: finalizado = 'pago'.
+  const ongoingCount = allRows.filter((r) => r.stage !== "pago").length;
+  const doneCount = allRows.filter((r) => r.stage === "pago").length;
+  const rows = allRows.filter((r) => (tab === "done" ? r.stage === "pago" : r.stage !== "pago"));
 
   // Fetch the last event for each process — quick N+1 for the MVP (small lists)
   const lastEvents = await Promise.all(
@@ -44,6 +57,14 @@ export default async function PortalHomePage({
   const q = impersonateQuery(impersonating, primary.id);
   const hasMultipleCompanies = customers.length > 1;
   const customerById = new Map(customers.map((c) => [c.id, c]));
+
+  const tabHref = (t: Tab) => {
+    const params = new URLSearchParams();
+    if (impersonating) params.set("impersonate", primary.id);
+    if (t !== "ongoing") params.set("tab", t);
+    const qs = params.toString();
+    return `/portal${qs ? `?${qs}` : ""}`;
+  };
 
   // Pick a friendly greeting. Single empresa keeps the company name; multi-empresa
   // shows the user's first name (the company tags appear below).
@@ -74,13 +95,22 @@ export default async function PortalHomePage({
         )}
       </header>
 
+      <nav className="inline-flex items-center gap-1 rounded-xl border bg-card p-1 shadow-sm">
+        <TabLink href={tabHref("ongoing")} active={tab === "ongoing"} label="Em andamento" count={ongoingCount} />
+        <TabLink href={tabHref("done")} active={tab === "done"} label="Finalizados" count={doneCount} />
+      </nav>
+
       {rows.length === 0 ? (
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Sem processos por enquanto</CardTitle>
+            <CardTitle className="text-base">
+              {tab === "done" ? "Nenhum processo finalizado ainda" : "Sem processos em andamento"}
+            </CardTitle>
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground">
-            Assim que houver um processo em seu nome, ele aparecerá aqui.
+            {tab === "done"
+              ? "Processos com status “Pago” aparecerão aqui."
+              : "Assim que houver um processo em seu nome, ele aparecerá aqui."}
           </CardContent>
         </Card>
       ) : (
@@ -103,21 +133,31 @@ export default async function PortalHomePage({
                     </span>
                   )}
                   <Badge variant="outline" className="text-xs">{MODAL_LABEL[p.modal]}</Badge>
-                  <Badge variant={stageBadgeVariant(p.stage, p.arrivalDate)} className="text-xs">
-                    {STAGE_LABEL[p.stage]}
-                    {delayed && <span className="ml-1">· Atrasado</span>}
-                  </Badge>
+                  <StagePill stage={p.stage} suffix={delayed ? "Atrasado" : undefined} />
                   {hasMultipleCompanies && empresa && (
                     <Badge variant="secondary" className="text-xs">
                       {empresa.tradeName ?? empresa.legalName}
                     </Badge>
                   )}
                 </div>
+                {p.hblNumber && (
+                  <p className="mt-1 font-mono text-sm font-bold uppercase tracking-wide">
+                    {p.modal === "air" ? "HAWB" : "HBL"}: {p.hblNumber}
+                  </p>
+                )}
                 <p className="mt-2 text-sm text-muted-foreground">
                   {p.origin} → {p.destination}
                 </p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Chegada prevista: {p.arrivalDate ? dateFmt.format(new Date(`${p.arrivalDate}T00:00:00`)) : "—"}
+                {p.exporterName && (
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Exportador: <span className="font-medium text-foreground">{p.exporterName}</span>
+                  </p>
+                )}
+                <p className="mt-2 text-base font-semibold">
+                  Chegada prevista:{" "}
+                  <span className="font-bold">
+                    {p.arrivalDate ? dateFmt.format(new Date(`${p.arrivalDate}T00:00:00`)) : "—"}
+                  </span>
                 </p>
                 {last && (
                   <p className="mt-2 text-xs text-muted-foreground">
@@ -132,5 +172,33 @@ export default async function PortalHomePage({
         </div>
       )}
     </div>
+  );
+}
+
+function TabLink({
+  href,
+  active,
+  label,
+  count,
+}: {
+  href: string;
+  active: boolean;
+  label: string;
+  count: number;
+}) {
+  return (
+    <Link
+      href={href}
+      className={`inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+        active
+          ? "bg-primary/10 text-primary"
+          : "text-muted-foreground hover:bg-muted hover:text-foreground"
+      }`}
+    >
+      {label}
+      <span className={`text-xs ${active ? "text-primary/70" : "text-muted-foreground"}`}>
+        ({count})
+      </span>
+    </Link>
   );
 }

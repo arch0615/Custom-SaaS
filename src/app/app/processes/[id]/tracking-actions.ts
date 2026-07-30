@@ -9,9 +9,14 @@ import { getProcessForOrg } from "@/lib/data/processes";
 import {
   createTrackingSubscription,
   deleteTrackingSubscription,
+  getTrackingSubscription,
+  markTrackingPolled,
 } from "@/lib/data/tracking";
 import { getTrackingProvider } from "@/lib/tracking/providers/registry";
 import { TrackingProviderError } from "@/lib/tracking/providers";
+import { fetchSearatesSnapshot } from "@/lib/tracking/providers/searates";
+import { recordSearatesQuota } from "@/lib/tracking/searates-quota";
+import { ingestTrackingEvent } from "@/lib/tracking/ingest";
 
 export type TrackingFormState = {
   success?: boolean;
@@ -116,4 +121,82 @@ export async function deleteTrackingSubscriptionAction(
   }
 
   revalidatePath(`/app/processes/${processId}`);
+}
+
+export type RefreshTrackingResult = {
+  accepted: number;
+  duplicates: number;
+  status: string | null;
+};
+
+/**
+ * Consulta o provedor AGORA e importa eventos novos. Só SeaRates por
+ * enquanto (vizion não implementado, manual não tem upstream).
+ *
+ * ATENÇÃO: consome quota do SeaRates (1 api_call por chamada, e
+ * 1 unique_shipment se for a primeira vez que consultamos o número).
+ */
+export async function refreshTrackingSubscriptionAction(
+  processId: string,
+  subscriptionId: string,
+): Promise<RefreshTrackingResult> {
+  const session = await requireSession();
+  requirePermission(session.role, "tracking:manage");
+
+  const proc = await getProcessForOrg(session.orgId, processId);
+  if (!proc) throw new Error("Processo não encontrado.");
+
+  const sub = await getTrackingSubscription(session.orgId, subscriptionId);
+  if (!sub || sub.processId !== processId) {
+    throw new Error("Rastreamento não encontrado.");
+  }
+
+  if (sub.provider !== "searates") {
+    throw new Error(
+      sub.provider === "manual"
+        ? "Manual não tem consulta automática — adicione eventos pela Timeline."
+        : "Provedor não suporta atualização manual ainda.",
+    );
+  }
+
+  let snapshot;
+  try {
+    snapshot = await fetchSearatesSnapshot({
+      refKind: sub.refKind,
+      externalRef: sub.externalRef,
+    });
+  } catch (err) {
+    if (err instanceof TrackingProviderError) {
+      throw new Error(err.message);
+    }
+    throw err;
+  }
+
+  recordSearatesQuota(snapshot.quota);
+  await markTrackingPolled(sub.id);
+
+  let accepted = 0;
+  let duplicates = 0;
+  for (const evt of snapshot.events) {
+    // Inclui containerNumber pra evitar colisão: uma mesma BL pode ter
+    // vários containers com o mesmo order_id em eventos idênticos.
+    const containerKey = evt.containerNumber ?? "x";
+    const externalId = evt.orderId
+      ? `${sub.externalRef}:${containerKey}:${evt.orderId}`
+      : `${sub.externalRef}:${containerKey}:${evt.date}:${evt.description.slice(0, 40)}`;
+    const result = await ingestTrackingEvent({
+      provider: "searates",
+      externalId,
+      refKind: sub.refKind,
+      externalRef: sub.externalRef,
+      occurredAt: new Date(evt.date),
+      title: evt.description,
+      note: evt.containerNumber ? `Container ${evt.containerNumber}` : null,
+    });
+    accepted += result.accepted;
+    duplicates += result.duplicates;
+  }
+
+  revalidatePath(`/app/processes/${processId}`);
+  return { accepted, duplicates, status: snapshot.status };
 }
