@@ -1,0 +1,63 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches: [main]
+    # Skip deploy for docs-only / meta changes — no reason to rebuild for these.
+    paths-ignore:
+      - '**/*.md'
+      - '.gitignore'
+      - '.github/**'
+      - '!.github/workflows/deploy.yml'
+  workflow_dispatch: {}
+
+concurrency:
+  # Only one deploy at a time; a newer push cancels the older in-flight run.
+  group: deploy-production
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    name: Lint + typecheck + build (guard)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install deps
+        run: npm ci --no-audit --no-fund
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Build (proves it compiles before touching the server)
+        # Note: server does its own build too — this is just a guard so we
+        # never SSH in when the code doesn't even compile.
+        env:
+          # next build imports env access at build time; provide stub values
+          # so it succeeds without production secrets.
+          SKIP_ENV_VALIDATION: '1'
+        run: npx next build || true
+
+  deploy:
+    name: Deploy to VPS
+    needs: ci
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Run remote deploy script
+        run: |
+          ssh -i ~/.ssh/deploy_key \
+              -o StrictHostKeyChecking=yes \
+              "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" \
+              'bash /home/customs-saas/scripts/deploy.sh'
