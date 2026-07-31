@@ -26,10 +26,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: 'npm'
+          # NOTE: cache: 'npm' desabilitado porque não temos package-lock.json
+          # commitado (npm 10.9 tem bug de peer-deps ao gerar o lock nesta
+          # árvore). Reativar quando o lock existir.
 
       - name: Install deps
-        run: npm ci --no-audit --no-fund
+        run: npm install --legacy-peer-deps --no-audit --no-fund
 
       - name: Typecheck
         run: npx tsc --noEmit

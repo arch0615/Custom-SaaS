@@ -22,8 +22,8 @@ git fetch --prune origin
 git reset --hard origin/main
 git clean -fd -e '.env*' -e '.storage-prod' -e 'node_modules'
 
-echo "▶  npm ci (installs everything — drizzle-kit needed for migrations)"
-npm ci --no-audit --no-fund
+echo "▶  npm install (usaria npm ci se tivéssemos package-lock.json)"
+npm install --legacy-peer-deps --no-audit --no-fund
 
 echo "▶  drizzle-kit migrate (idempotent, safe if no new migrations)"
 npx drizzle-kit migrate
