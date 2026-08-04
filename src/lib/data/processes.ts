@@ -8,6 +8,7 @@ import {
   type ContainerEntry,
 } from "@/db/schema/processes";
 import { customers } from "@/db/schema/customers";
+import { SHIPMENT_DATE_SORT_STAGES } from "@/lib/process-status";
 
 export type ProcessStage = (typeof ProcessStageEnum.enumValues)[number];
 export type ProcessModal = (typeof ProcessModalEnum.enumValues)[number];
@@ -76,8 +77,14 @@ export async function listProcessesForOrg(
     .from(processes)
     .innerJoin(customers, eq(customers.id, processes.customerId))
     .where(and(...wheres))
-    // Order by Previsão de Chegada ASC (nulls last), tie-break by newest created.
-    .orderBy(sql`${processes.arrivalDate} ASC NULLS LAST`, desc(processes.createdAt));
+    // Sort inteligente: em etapas PRÉ-embarque (aguarda_prontidao_carga...
+    // aguarda_embarque), a data de chegada ainda é planejamento incerto —
+    // ordena pela data de EMBARQUE. Nos demais estágios, ordena pela
+    // CHEGADA (comportamento anterior). Tie-break: mais recente criado.
+    .orderBy(
+      sql`(CASE WHEN ${inArray(processes.stage, SHIPMENT_DATE_SORT_STAGES)} THEN ${processes.shipmentDate} ELSE ${processes.arrivalDate} END) ASC NULLS LAST`,
+      desc(processes.createdAt),
+    );
 }
 
 export async function getProcessForOrg(orgId: string, id: string) {

@@ -216,6 +216,21 @@ export const STAGE_LABEL: Record<ProcessStage, string> = {
 
 export const STAGE_TERMINAL: ProcessStage = "processo_finalizado";
 
+/**
+ * Etapas pré-embarque: nessas, a data de chegada é apenas planejamento e
+ * ainda pode mudar. O que o broker precisa priorizar é a data de embarque
+ * (quando o container/BL vai efetivamente sair). Usadas em ORDER BY na
+ * listagem de processos.
+ */
+export const SHIPMENT_DATE_SORT_STAGES: ProcessStage[] = [
+  "aguarda_prontidao_carga",
+  "aguarda_booking",
+  "aguarda_draft",
+  "aguarda_aprovacao_draft",
+  "aguarda_draft_atualizado",
+  "aguarda_embarque",
+];
+
 export const STAGE_OPTIONS = STAGE_ORDER.map((s) => ({
   value: s,
   label: STAGE_LABEL[s],
