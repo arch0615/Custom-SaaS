@@ -8,7 +8,6 @@ import {
   type ContainerEntry,
 } from "@/db/schema/processes";
 import { customers } from "@/db/schema/customers";
-import { SHIPMENT_DATE_SORT_STAGES } from "@/lib/process-status";
 
 export type ProcessStage = (typeof ProcessStageEnum.enumValues)[number];
 export type ProcessModal = (typeof ProcessModalEnum.enumValues)[number];
@@ -44,7 +43,14 @@ export type ProcessListRow = {
 
 export async function listProcessesForOrg(
   orgId: string,
-  opts: { customerId?: string; customerIds?: string[] } = {},
+  opts: {
+    customerId?: string;
+    customerIds?: string[];
+    /** Ordena por data de EMBARQUE (asc) em vez de CHEGADA. Usado quando
+     * o usuário filtrou pra uma etapa pré-embarque, onde a chegada ainda
+     * é planejamento e o que importa é quando o embarque vai sair. */
+    sortByShipmentDate?: boolean;
+  } = {},
 ): Promise<ProcessListRow[]> {
   const wheres = [eq(processes.orgId, orgId), isNull(processes.deletedAt)];
   if (opts.customerId) {
@@ -52,6 +58,10 @@ export async function listProcessesForOrg(
   } else if (opts.customerIds && opts.customerIds.length > 0) {
     wheres.push(inArray(processes.customerId, opts.customerIds));
   }
+
+  const primarySortKey = opts.sortByShipmentDate
+    ? processes.shipmentDate
+    : processes.arrivalDate;
 
   return db
     .select({
@@ -77,14 +87,9 @@ export async function listProcessesForOrg(
     .from(processes)
     .innerJoin(customers, eq(customers.id, processes.customerId))
     .where(and(...wheres))
-    // Sort inteligente: em etapas PRÉ-embarque (aguarda_prontidao_carga...
-    // aguarda_embarque), a data de chegada ainda é planejamento incerto —
-    // ordena pela data de EMBARQUE. Nos demais estágios, ordena pela
-    // CHEGADA (comportamento anterior). Tie-break: mais recente criado.
-    .orderBy(
-      sql`(CASE WHEN ${inArray(processes.stage, SHIPMENT_DATE_SORT_STAGES)} THEN ${processes.shipmentDate} ELSE ${processes.arrivalDate} END) ASC NULLS LAST`,
-      desc(processes.createdAt),
-    );
+    // Ordem: chave primária (embarque OU chegada, decidido pelo caller) ASC
+    // com nulls no final, tie-break pelo mais recente criado.
+    .orderBy(sql`${primarySortKey} ASC NULLS LAST`, desc(processes.createdAt));
 }
 
 export async function getProcessForOrg(orgId: string, id: string) {

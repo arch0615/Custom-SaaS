@@ -16,6 +16,7 @@ import {
 } from "@/lib/data/processes";
 import { listCustomersForOrg } from "@/lib/data/customers";
 import {
+  SHIPMENT_DATE_SORT_STAGES,
   STAGE_GROUP,
   STAGE_GROUP_LABEL,
   STAGE_GROUP_ORDER,
@@ -117,8 +118,14 @@ export default async function ProcessesPage({
   const statusFilter: ProcessStage | null = isStage(statusRaw) ? statusRaw : null;
   const tipoFilter: CustomerType | null = isTipo(tipoRaw) ? tipoRaw : null;
 
+  // Sort inteligente: só ordena por EMBARQUE quando o usuário filtrou pra uma
+  // etapa pré-embarque (nesses casos a data de chegada ainda é planejamento).
+  // "Todos os status" mantém ordem por CHEGADA (padrão).
+  const sortByShipmentDate =
+    !!statusFilter && (SHIPMENT_DATE_SORT_STAGES as ProcessStage[]).includes(statusFilter);
+
   const [allRows, customers] = await Promise.all([
-    listProcessesForOrg(session.orgId),
+    listProcessesForOrg(session.orgId, { sortByShipmentDate }),
     listCustomersForOrg(session.orgId),
   ]);
 
