@@ -116,6 +116,7 @@ export async function advanceStageAction(id: string, formData: FormData) {
   const recipients = await resolveCustomerClientUsers(session.orgId, existing.customerId);
   if (recipients.length > 0) {
     const customer = await getCustomerForOrg(session.orgId, existing.customerId);
+    const portalUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? ""}/portal/processes/${id}`;
     await dispatchNotification({
       orgId: session.orgId,
       kind: "stage_advanced",
@@ -125,6 +126,11 @@ export async function advanceStageAction(id: string, formData: FormData) {
         stageLabel: STAGE_LABEL[toStage],
         toStage,
         customerName: customer?.tradeName ?? customer?.legalName ?? "",
+        numeroBl: existing.hblNumber ?? "",
+        numeroInvoice: existing.invoiceNumber ?? "",
+        actorName: session.userName ?? "",
+        orgName: session.orgName,
+        portalUrl,
       },
       recipients,
     });

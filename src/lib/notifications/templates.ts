@@ -8,6 +8,22 @@ export type RenderedNotification = {
   emailText: string;
 };
 
+/** Formata o assunto padrão "FOLLOW UP" pedido pelo Matheus:
+ *    FOLLOW UP / <BL> + <INVOICE> + <REF>
+ * Partes ausentes são omitidas junto com o "+" correspondente.
+ */
+function followUpSubject(bl: string, invoice: string, ref: string): string {
+  const parts = [bl, invoice, ref].filter(Boolean);
+  return parts.length > 0 ? `FOLLOW UP / ${parts.join(" + ")}` : "FOLLOW UP";
+}
+
+/** Assinatura padrão: quem fez a ação + nome do broker + link do sistema. */
+function signature(actorName: string, orgName: string, portalUrl: string): string {
+  const actor = actorName || "Equipe";
+  const line1 = `${actor} – ${orgName}`.trim();
+  return portalUrl ? `${line1}\n${portalUrl}` : line1;
+}
+
 export function renderNotification(
   kind: NotificationKind,
   payload: Record<string, unknown>,
@@ -18,6 +34,15 @@ export function renderNotification(
   const stageLabel = String(payload.stageLabel ?? "");
   const docFilename = String(payload.filename ?? "");
   const docType = String(payload.docType ?? "");
+  const numeroBl = String(payload.numeroBl ?? "");
+  const numeroInvoice = String(payload.numeroInvoice ?? "");
+  const actorName = String(payload.actorName ?? "");
+  const orgName = String(payload.orgName ?? "");
+  const portalUrl = String(payload.portalUrl ?? "");
+
+  const followUp = followUpSubject(numeroBl, numeroInvoice, ref);
+  const sig = signature(actorName, orgName, portalUrl);
+  const helloTarget = customerName || "cliente";
 
   switch (kind) {
     case "stage_advanced":
@@ -25,16 +50,17 @@ export function renderNotification(
         title: `${ref} avançou para ${stageLabel}`,
         body: customerName ? `Empresa: ${customerName}` : null,
         href: processId ? `/portal/processes/${processId}` : null,
-        emailSubject: customerName
-          ? `[${customerName}] ${ref} avançou para ${stageLabel}`
-          : `Seu processo ${ref} avançou para ${stageLabel}`,
-        emailText: `Olá,
+        emailSubject: followUp,
+        emailText: `Olá, ${helloTarget}!
 
-${customerName ? `Empresa: ${customerName}\n` : ""}O processo ${ref} avançou para a etapa "${stageLabel}".
+Seu processo ${ref} teve uma nova atualização:
+BL: ${numeroBl || "—"}
+Invoice: ${numeroInvoice || "—"}
+Status: ${stageLabel}
 
-Acompanhe os detalhes no portal.
+Continuamos acompanhando o processo e informaremos você sobre os próximos avanços.
 
-— Despachante`,
+${sig}`,
       };
     case "doc_added_by_broker":
       return {
@@ -43,15 +69,53 @@ Acompanhe os detalhes no portal.
           .filter(Boolean)
           .join(" · ") || null,
         href: processId ? `/portal/processes/${processId}` : null,
-        emailSubject: customerName
-          ? `[${customerName}] Novo documento em ${ref}`
-          : `Novo documento em ${ref}`,
-        emailText: `Olá,
+        emailSubject: followUp,
+        emailText: `Olá, ${helloTarget}!
 
-${customerName ? `Empresa: ${customerName}\n` : ""}O despachante adicionou o documento "${docFilename}" ao processo ${ref}.
+Seu processo ${ref} teve uma nova atualização:
+BL: ${numeroBl || "—"}
+Invoice: ${numeroInvoice || "—"}
+Documento adicionado: ${docFilename}${docType ? ` (${docType})` : ""}
 
-— Despachante`,
+Continuamos acompanhando o processo e informaremos você sobre os próximos avanços.
+
+${sig}`,
       };
+    case "doc_replaced":
+      return {
+        title: `${ref}: documento substituído (${docFilename})`,
+        body: customerName ? `Empresa: ${customerName}` : null,
+        href: processId ? `/portal/processes/${processId}` : null,
+        emailSubject: followUp,
+        emailText: `Olá, ${helloTarget}!
+
+Seu processo ${ref} teve uma nova atualização:
+BL: ${numeroBl || "—"}
+Invoice: ${numeroInvoice || "—"}
+Documento substituído: ${docFilename}
+
+Continuamos acompanhando o processo e informaremos você sobre os próximos avanços.
+
+${sig}`,
+      };
+    case "pendency_flagged":
+      return {
+        title: `Pendência em ${ref}`,
+        body: customerName ? `Empresa: ${customerName}` : null,
+        href: processId ? `/portal/processes/${processId}` : null,
+        emailSubject: followUp,
+        emailText: `Olá, ${helloTarget}!
+
+Seu processo ${ref} teve uma nova atualização:
+BL: ${numeroBl || "—"}
+Invoice: ${numeroInvoice || "—"}
+Pendência sinalizada — verifique no portal.
+
+Continuamos acompanhando o processo e informaremos você sobre os próximos avanços.
+
+${sig}`,
+      };
+    // ─── Broker-facing (não muda) ──────────────────────────────
     case "doc_added_by_client":
       return {
         title: `Cliente enviou um documento em ${ref}: ${docFilename}`,
@@ -68,16 +132,6 @@ ${customerName ? `Empresa: ${customerName}\n` : ""}O despachante adicionou o doc
         emailSubject: `Solicitação de atualização: ${ref}`,
         emailText: `O cliente ${customerName} solicitou atualização no processo ${ref}.`,
       };
-    case "doc_replaced":
-      return {
-        title: `${ref}: documento substituído (${docFilename})`,
-        body: customerName ? `Empresa: ${customerName}` : null,
-        href: processId ? `/portal/processes/${processId}` : null,
-        emailSubject: customerName
-          ? `[${customerName}] Documento substituído em ${ref}`
-          : `Documento substituído em ${ref}`,
-        emailText: `${customerName ? `Empresa: ${customerName}\n\n` : ""}O documento "${docFilename}" no processo ${ref} foi substituído por uma nova versão.`,
-      };
     case "process_delayed":
       return {
         title: `${ref} está atrasado`,
@@ -85,14 +139,6 @@ ${customerName ? `Empresa: ${customerName}\n` : ""}O despachante adicionou o doc
         href: processId ? `/app/processes/${processId}` : null,
         emailSubject: `Atenção: processo ${ref} está atrasado`,
         emailText: `O processo ${ref} ultrapassou a data prevista de chegada.`,
-      };
-    case "pendency_flagged":
-      return {
-        title: `Pendência em ${ref}`,
-        body: customerName ? `Empresa: ${customerName}` : null,
-        href: processId ? `/portal/processes/${processId}` : null,
-        emailSubject: customerName ? `[${customerName}] Pendência em ${ref}` : `Pendência em ${ref}`,
-        emailText: `${customerName ? `Empresa: ${customerName}\n\n` : ""}Há uma pendência no processo ${ref}. Verifique no portal.`,
       };
     case "team_invited":
     case "client_invited":

@@ -108,6 +108,7 @@ export async function uploadDocumentAction(
   const recipients = await resolveCustomerClientUsers(session.orgId, proc.customerId);
   if (recipients.length > 0) {
     const customer = await getCustomerForOrg(session.orgId, proc.customerId);
+    const portalUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? ""}/portal/processes/${processId}`;
     await dispatchNotification({
       orgId: session.orgId,
       kind: "doc_added_by_broker",
@@ -117,6 +118,11 @@ export async function uploadDocumentAction(
         filename,
         docType: DOCUMENT_TYPE_LABEL[typeParse.data as DocumentType],
         customerName: customer?.tradeName ?? customer?.legalName ?? "",
+        numeroBl: proc.hblNumber ?? "",
+        numeroInvoice: proc.invoiceNumber ?? "",
+        actorName: session.userName ?? "",
+        orgName: session.orgName,
+        portalUrl,
       },
       recipients,
     });

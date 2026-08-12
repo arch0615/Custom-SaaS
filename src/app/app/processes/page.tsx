@@ -193,7 +193,7 @@ export default async function ProcessesPage({
       <header className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:flex-row sm:items-start sm:justify-between">
         <div className="space-y-1">
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">Processos</h1>
-          <p className="text-sm text-slate-500">Gerencie todos os processos de despacho aduaneiro</p>
+          <p className="text-sm text-slate-500">Gerencie toda a operação de agenciamento de cargas e despacho aduaneiro em um só lugar.</p>
         </div>
         {canCreate ? (
           <Link
