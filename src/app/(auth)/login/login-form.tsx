@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,7 +20,15 @@ export function LoginForm() {
         )}
       </div>
       <div className="space-y-2">
-        <Label htmlFor="password">Senha</Label>
+        <div className="flex items-baseline justify-between">
+          <Label htmlFor="password">Senha</Label>
+          <Link
+            href="/forgot-password"
+            className="text-xs font-medium text-muted-foreground underline underline-offset-4 hover:text-foreground"
+          >
+            Esqueci minha senha
+          </Link>
+        </div>
         <Input id="password" name="password" type="password" autoComplete="current-password" required />
         {state.fieldErrors?.password && (
           <p className="text-sm text-destructive">{state.fieldErrors.password[0]}</p>
