@@ -59,7 +59,13 @@ jobs:
 
       - name: Run remote deploy script
         run: |
+          # Keepalive evita "Broken pipe" durante npm install/next build
+          # (comandos longos sem output podem levar o firewall a matar a
+          # conexão idle). 60s de intervalo, aguenta 10 falhas antes de
+          # desistir.
           ssh -i ~/.ssh/deploy_key \
               -o StrictHostKeyChecking=yes \
+              -o ServerAliveInterval=60 \
+              -o ServerAliveCountMax=10 \
               "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" \
               'bash /home/customs-saas/scripts/deploy.sh'
