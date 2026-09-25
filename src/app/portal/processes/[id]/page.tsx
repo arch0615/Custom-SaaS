@@ -10,8 +10,6 @@ import { MODAL_LABEL, STAGE_LABEL, isDelayed, stageBadgeVariant } from "@/lib/pr
 
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { StageProgress } from "@/components/portal/stage-progress";
-import { GroupProgress } from "@/components/processes/group-progress";
 import { TimelineView } from "@/components/processes/timeline-view";
 import { DocumentsView } from "@/components/processes/documents-view";
 import { RequestUpdateButton } from "./request-update-button";
@@ -73,7 +71,10 @@ export default async function PortalProcessPage({
           </Badge>
         </div>
         <p className="text-sm text-muted-foreground">
-          {proc.origin} → {proc.destination} · Chegada prevista {dateOnly(proc.arrivalDate)}
+          {proc.origin} → {proc.destination}
+        </p>
+        <p className="text-base font-bold">
+          Chegada prevista: {dateOnly(proc.arrivalDate)}
         </p>
       </header>
 
@@ -81,9 +82,11 @@ export default async function PortalProcessPage({
         <CardHeader>
           <CardTitle className="text-base">Andamento</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-5">
-          <GroupProgress stage={proc.stage} />
-          <StageProgress current={proc.stage} />
+        <CardContent>
+          <p className="text-sm">
+            <span className="text-muted-foreground">Etapa atual:</span>{" "}
+            <span className="font-medium">{STAGE_LABEL[proc.stage]}</span>
+          </p>
         </CardContent>
       </Card>
 

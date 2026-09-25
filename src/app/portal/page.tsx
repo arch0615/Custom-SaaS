@@ -51,7 +51,7 @@ export default async function PortalHomePage({
 
   // Fetch the last event for each process — quick N+1 for the MVP (small lists)
   const lastEvents = await Promise.all(
-    rows.map((p) => listTimelineForProcess(session.orgId, p.id).then((evs) => evs[evs.length - 1] ?? null)),
+    rows.map((p) => listTimelineForProcess(session.orgId, p.id).then((evs) => evs[0] ?? null)),
   );
 
   const q = impersonateQuery(impersonating, primary.id);

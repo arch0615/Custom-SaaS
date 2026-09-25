@@ -43,7 +43,7 @@ export async function listTimelineForProcess(orgId: string, processId: string): 
     LEFT JOIN users deleter ON deleter.id = te.deleted_by
     WHERE te.org_id = ${orgId}
       AND te.process_id = ${processId}
-    ORDER BY te.occurred_at ASC
+    ORDER BY te.occurred_at DESC
   `);
   return rows.rows.map((r: Record<string, unknown>) => ({
     id: r.id as string,
